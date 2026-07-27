@@ -18,7 +18,8 @@
     "format:check": "prettier --check \"**/*.{js,json,md}\" --ignore-path ../.prettierignore",
     "migrate:create": "node scripts/run-migrations.js create",
     "migrate:up": "node scripts/run-migrations.js up",
-    "migrate:down": "node scripts/run-migrations.js down"
+    "migrate:down": "node scripts/run-migrations.js down",
+    "create:admin": "node scripts/create-initial-admin.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
