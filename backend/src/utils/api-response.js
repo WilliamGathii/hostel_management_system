@@ -1,6 +1,10 @@
 const sendSuccess = (
   res,
-  { statusCode = 200, message = 'Request completed successfully', data = {} } = {},
+  {
+    statusCode = 200,
+    message = 'Request completed successfully',
+    data = {},
+  } = {}
 ) =>
   res.status(statusCode).json({
     success: true,
@@ -24,7 +28,7 @@ const sendError = (
     errors = [],
     requestId,
     stack,
-  } = {},
+  } = {}
 ) => {
   const responseBody = {
     success: false,

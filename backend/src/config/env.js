@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 
 dotenv.config({
   path: path.resolve(__dirname, '../../.env'),
+  quiet: true,
 });
 
 const parsePort = (value) => {
@@ -48,7 +49,9 @@ const validateRequiredEnv = () => {
   const missingValues = getMissingImportantValues();
 
   if (env.isProduction && missingValues.length > 0) {
-    throw new Error(`Missing required environment values: ${missingValues.join(', ')}`);
+    throw new Error(
+      `Missing required environment values: ${missingValues.join(', ')}`
+    );
   }
 
   return missingValues;
@@ -60,8 +63,8 @@ const warnAboutMissingEnv = (logger) => {
   if (!env.isTest && missingValues.length > 0) {
     logger.warn(
       `Missing environment values: ${missingValues.join(
-        ', ',
-      )}. Some future backend features will not work until they are configured.`,
+        ', '
+      )}. Some future backend features will not work until they are configured.`
     );
   }
 

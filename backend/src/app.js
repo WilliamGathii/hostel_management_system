@@ -53,7 +53,7 @@ app.use(
     stream: {
       write: (message) => logger.info(message.trim()),
     },
-  }),
+  })
 );
 
 app.use('/api/v1', apiRouter);

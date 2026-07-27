@@ -1,6 +1,10 @@
 const app = require('./app');
 const { closeDatabaseConnection } = require('./config/database');
-const { env, validateRequiredEnv, warnAboutMissingEnv } = require('./config/env');
+const {
+  env,
+  validateRequiredEnv,
+  warnAboutMissingEnv,
+} = require('./config/env');
 const logger = require('./utils/logger');
 
 validateRequiredEnv();

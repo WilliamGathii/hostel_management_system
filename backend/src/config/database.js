@@ -18,7 +18,9 @@ const pool = createPool();
 
 const testDatabaseConnection = async () => {
   if (!pool) {
-    logger.warn('Database connection was not tested because DATABASE_URL is not set.');
+    logger.warn(
+      'Database connection was not tested because DATABASE_URL is not set.'
+    );
     return false;
   }
 

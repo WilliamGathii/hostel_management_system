@@ -20,10 +20,15 @@ const errorHandler = (error, req, res, next) => {
   const statusCode = getStatusCode(error);
   const isUnexpectedError = statusCode >= 500;
   const message =
-    isUnexpectedError && env.isProduction ? 'Server error' : error.message || 'Request failed';
+    isUnexpectedError && env.isProduction
+      ? 'Server error'
+      : error.message || 'Request failed';
 
   if (isUnexpectedError) {
-    logger.error(`Unexpected error for request ${req.requestId || 'unknown'}.`, error);
+    logger.error(
+      `Unexpected error for request ${req.requestId || 'unknown'}.`,
+      error
+    );
   }
 
   return sendError(res, {
