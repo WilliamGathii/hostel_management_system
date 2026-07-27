@@ -12,6 +12,7 @@ const nodeGlobals = {
 const jestGlobals = {
   afterAll: 'readonly',
   beforeAll: 'readonly',
+  beforeEach: 'readonly',
   describe: 'readonly',
   expect: 'readonly',
   jest: 'readonly',
