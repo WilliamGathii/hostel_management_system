@@ -4,12 +4,14 @@ const { env } = require('./env');
 const logger = require('../utils/logger');
 
 const createPool = () => {
-  if (!env.databaseUrl) {
+  const connectionString = env.isTest ? env.testDatabaseUrl : env.databaseUrl;
+
+  if (!connectionString) {
     return null;
   }
 
   return new Pool({
-    connectionString: env.databaseUrl,
+    connectionString,
     ssl: env.isProduction ? { rejectUnauthorized: false } : false,
   });
 };

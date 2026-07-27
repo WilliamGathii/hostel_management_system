@@ -26,7 +26,7 @@ There is no separate Warden role. There is no separate Finance or Accounts role.
 
 | Permission | Student | Admin | Maintenance Staff | Security Staff |
 | --- | --- | --- | --- | --- |
-| Register an account | Allowed | Allowed | Not allowed | Not allowed |
+| Register an account | Allowed | Not allowed | Not allowed | Not allowed |
 | Log in | Allowed | Allowed | Allowed | Allowed |
 | View own profile | Own records only | Own records only | Own records only | Own records only |
 | Update own profile | Own records only | Own records only | Own records only | Own records only |
@@ -77,6 +77,7 @@ There is no separate Warden role. There is no separate Finance or Accounts role.
 4. Admin users manage simulated payment records.
 5. Admin users should not view user passwords.
 6. Admin users handle general hostel administrative duties in this version.
+7. Admin accounts are created through the safe initial setup process or future Admin user management, not public registration.
 
 ## Maintenance Staff Rules
 

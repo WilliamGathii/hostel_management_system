@@ -17,28 +17,43 @@ const parsePort = (value) => {
   return parsedPort;
 };
 
+const parseSaltRounds = (value) => {
+  const parsedRounds = Number.parseInt(value, 10);
+
+  if (Number.isNaN(parsedRounds) || parsedRounds < 4 || parsedRounds > 15) {
+    return 12;
+  }
+
+  return parsedRounds;
+};
+
 const nodeEnv = process.env.NODE_ENV || 'development';
+const isTest = nodeEnv === 'test';
 
 const env = {
   port: parsePort(process.env.PORT),
   nodeEnv,
   databaseUrl: process.env.DATABASE_URL || '',
-  jwtSecret: process.env.JWT_SECRET || '',
+  testDatabaseUrl: process.env.TEST_DATABASE_URL || '',
+  jwtSecret:
+    process.env.JWT_SECRET ||
+    (isTest ? 'test-only-jwt-secret-for-automated-tests-do-not-use' : ''),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1h',
+  bcryptSaltRounds: parseSaltRounds(process.env.BCRYPT_SALT_ROUNDS),
   frontendUrl: process.env.FRONTEND_URL || '',
   isDevelopment: nodeEnv === 'development',
   isProduction: nodeEnv === 'production',
-  isTest: nodeEnv === 'test',
+  isTest,
 };
 
 const getMissingImportantValues = () => {
   const missingValues = [];
 
-  if (!env.databaseUrl) {
+  if (!env.isTest && !env.databaseUrl) {
     missingValues.push('DATABASE_URL');
   }
 
-  if (!env.jwtSecret) {
+  if (!env.isTest && !env.jwtSecret) {
     missingValues.push('JWT_SECRET');
   }
 
@@ -48,7 +63,9 @@ const getMissingImportantValues = () => {
 const validateRequiredEnv = () => {
   const missingValues = getMissingImportantValues();
 
-  if (env.isProduction && missingValues.length > 0) {
+  const jwtSecretMissing = missingValues.includes('JWT_SECRET');
+
+  if ((env.isProduction && missingValues.length > 0) || jwtSecretMissing) {
     throw new Error(
       `Missing required environment values: ${missingValues.join(', ')}`
     );
@@ -64,7 +81,7 @@ const warnAboutMissingEnv = (logger) => {
     logger.warn(
       `Missing environment values: ${missingValues.join(
         ', '
-      )}. Some future backend features will not work until they are configured.`
+      )}. Database-backed features will not work until they are configured.`
     );
   }
 

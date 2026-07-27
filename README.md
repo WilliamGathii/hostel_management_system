@@ -17,7 +17,7 @@ The Smart Hostel Management System is a planned web application for managing hos
 
 ## Current Project Status
 
-The project setup, project scope, and system design documentation have been completed and merged into `develop`. The backend foundation has been prepared on `feature/backend-foundation` for review. Feature development has not started. No login pages, dashboards, forms, feature APIs, controllers, database tables, migrations, or business logic have been created.
+The project setup, scope, system design, and backend foundation are complete. Backend authentication and role-based access control are being developed on `feature/authentication`. Frontend authentication screens and other system features have not been created.
 
 ## Feature-Based Development Timeline
 
@@ -145,13 +145,65 @@ Run a backend package audit:
 npm audit
 ```
 
+Run database migrations from the backend folder:
+
+```bash
+npm run migrate:up
+```
+
+Roll back the most recent migration:
+
+```bash
+npm run migrate:down
+```
+
+Create a new migration file:
+
+```bash
+npm run migrate:create -- short-migration-name
+```
+
+Migration commands require a local, non-production `DATABASE_URL`. Never place
+database credentials in package scripts or committed files.
+
 Health-check endpoint:
 
 ```text
 GET /api/v1/health
 ```
 
-The backend foundation has only the health-check route. Authentication, student management, room management, room allocation, maintenance, visitors, payments, announcements, notifications, reports, and audit-log features have not been developed yet. Database migrations have not been created yet.
+## Backend Authentication
+
+Authentication endpoints:
+
+```text
+POST /api/v1/auth/register
+POST /api/v1/auth/login
+POST /api/v1/auth/logout
+GET  /api/v1/auth/me
+```
+
+Public registration creates Student accounts only. Admin and staff accounts
+cannot use public registration.
+
+To create the first Admin locally, set these environment variables without
+committing their values:
+
+```bash
+export ADMIN_EMAIL="<admin-email>"
+export ADMIN_PASSWORD="<strong-local-password>"
+export ADMIN_FULL_NAME="<admin-name>"
+export ADMIN_STAFF_NUMBER="<staff-number>"
+npm run create:admin
+```
+
+Run the authentication table migration before using the setup script. The
+script requires a local development database and refuses to run in production.
+
+The frontend login and registration screens have not been created. Student
+management, rooms, allocations, maintenance, visitors, payments,
+announcements, notifications, reports, and audit-log features have not been
+developed yet.
 
 ## Branching Structure
 
@@ -172,6 +224,7 @@ Project setup has been merged into `develop`. New work should use feature branch
 - [Role Permission Matrix](docs/system-design/rbac-matrix.md)
 - [Naming Rules](docs/system-design/naming-rules.md)
 - [Folder Ownership](docs/system-design/folder-ownership.md)
+- [Authentication Design](docs/system-design/authentication-design.md)
 
 ## Group Members
 
