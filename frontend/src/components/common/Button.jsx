@@ -6,7 +6,7 @@ const variants = {
   secondary:
     'bg-periwinkle-light text-primary hover:bg-periwinkle focus-visible:outline-primary',
   danger:
-    'bg-error text-white hover:bg-[#6f1f1b] focus-visible:outline-error',
+    'bg-error text-white hover:opacity-90 focus-visible:outline-error',
   ghost:
     'bg-transparent text-muted hover:bg-page hover:text-primary focus-visible:outline-primary',
 };
