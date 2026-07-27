@@ -19,6 +19,33 @@ The Smart Hostel Management System is a planned web application for managing hos
 
 The project is in the development environment setup stage. Feature development has not started. No login pages, dashboards, forms, API routes, controllers, database tables, migrations, or business logic have been created.
 
+## Feature-Based Development Timeline
+
+1. Complete and merge the project setup into `develop`.
+2. Confirm the project scope and user roles.
+3. Design the database, ER diagram, API endpoints, and role permissions.
+4. Set up the backend foundation.
+5. Develop authentication and role-based access control.
+6. Set up the React frontend structure, routing, layouts, and API service layer.
+7. Create role-based dashboards for students, admins, maintenance staff, and security staff.
+8. Develop student and profile management.
+9. Develop room management and room allocation.
+10. Develop maintenance request submission, assignment, tracking, and status updates.
+11. Develop visitor registration, visitor approval, and security entry verification.
+12. Develop announcements and notifications.
+13. Develop the payment placeholder and reporting features.
+14. Carry out frontend, backend, API, integration, and role-permission testing.
+15. Prepare Docker, GitHub Actions, deployment, monitoring, and backups.
+16. Complete user testing, documentation, final review, and release.
+
+## Payment Scope
+
+Because of the limited project development time, the first version will not integrate a real payment gateway. The project will include only a simulated or placeholder payment module that demonstrates the payment workflow without transferring real money.
+
+The placeholder payment module may later include payment amount, payment method, transaction reference, payment date, payment status, student payment history, admin payment records, and payment reports.
+
+The project must not connect to M-Pesa, Stripe, PayPal, banks, cards, or any external payment provider during the placeholder payment stage.
+
 ## Folder Structure
 
 ```text
