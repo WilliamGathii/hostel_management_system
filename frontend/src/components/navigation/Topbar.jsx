@@ -3,8 +3,8 @@ import { LuBuilding2, LuLogOut } from 'react-icons/lu';
 import { ROLE_LABELS, getNavigationForRole } from '../../config/navigation';
 
 export function Topbar({ user, pathname, onLogout, isLoggingOut }) {
-  const currentItem = getNavigationForRole(user.role).find(
-    (item) => item.path === pathname
+  const currentItem = getNavigationForRole(user.role).find((item) =>
+    pathname.startsWith(item.path)
   );
 
   return (

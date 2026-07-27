@@ -111,6 +111,11 @@ export const NAVIGATION_BY_ROLE = Object.freeze({
       Icon: LuMegaphone,
     },
     {
+      label: 'Notifications',
+      path: '/admin/notifications',
+      Icon: LuBell,
+    },
+    {
       label: 'Payments',
       path: '/admin/payments',
       Icon: LuReceiptText,
@@ -146,6 +151,16 @@ export const NAVIGATION_BY_ROLE = Object.freeze({
       Icon: LuHistory,
       mobile: true,
     },
+    {
+      label: 'Announcements',
+      path: '/maintenance/announcements',
+      Icon: LuMegaphone,
+    },
+    {
+      label: 'Notifications',
+      path: '/maintenance/notifications',
+      Icon: LuBell,
+    },
   ],
   security_staff: [
     {
@@ -165,6 +180,16 @@ export const NAVIGATION_BY_ROLE = Object.freeze({
       path: '/security/history',
       Icon: LuHistory,
       mobile: true,
+    },
+    {
+      label: 'Announcements',
+      path: '/security/announcements',
+      Icon: LuMegaphone,
+    },
+    {
+      label: 'Notifications',
+      path: '/security/notifications',
+      Icon: LuBell,
     },
   ],
 });

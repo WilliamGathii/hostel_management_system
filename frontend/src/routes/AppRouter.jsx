@@ -1,14 +1,24 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { LoginPage } from '../features/authentication/pages/LoginPage';
+import { AnnouncementPage } from '../features/communications/pages/AnnouncementPage';
+import { NotificationPage } from '../features/communications/pages/NotificationPage';
 import { AdminDashboardPage } from '../features/dashboard/pages/AdminDashboardPage';
 import { MaintenanceDashboardPage } from '../features/dashboard/pages/MaintenanceDashboardPage';
 import { SecurityDashboardPage } from '../features/dashboard/pages/SecurityDashboardPage';
 import { StudentDashboardPage } from '../features/dashboard/pages/StudentDashboardPage';
+import { MaintenanceDetailPage } from '../features/maintenance/pages/MaintenanceDetailPage';
+import { MaintenancePage } from '../features/maintenance/pages/MaintenancePage';
+import { AdminAllocationPage } from '../features/rooms/pages/AdminAllocationPage';
+import { AdminRoomDetailPage } from '../features/rooms/pages/AdminRoomDetailPage';
+import { AdminRoomListPage } from '../features/rooms/pages/AdminRoomListPage';
+import { StudentRoomPage } from '../features/rooms/pages/StudentRoomPage';
 import { AdminStudentCreatePage } from '../features/students/pages/AdminStudentCreatePage';
 import { AdminStudentDetailPage } from '../features/students/pages/AdminStudentDetailPage';
 import { AdminStudentListPage } from '../features/students/pages/AdminStudentListPage';
 import { StudentProfilePage } from '../features/students/pages/StudentProfilePage';
+import { VisitorDetailPage } from '../features/visitors/pages/VisitorDetailPage';
+import { VisitorPage } from '../features/visitors/pages/VisitorPage';
 import { AppLayout } from '../layouts/AppLayout';
 import { AuthLayout } from '../layouts/AuthLayout';
 import { FeaturePlaceholderPage } from '../pages/FeaturePlaceholderPage';
@@ -45,49 +55,23 @@ export function AppRouter() {
               path="/student/dashboard"
             />
             <Route element={<StudentProfilePage />} path="/student/profile" />
+            <Route element={<StudentRoomPage />} path="/student/room" />
+            <Route element={<MaintenancePage />} path="/student/maintenance" />
             <Route
-              element={
-                <Placeholder
-                  description="View your current room allocation."
-                  title="Room allocation"
-                />
-              }
-              path="/student/room"
+              element={<MaintenanceDetailPage />}
+              path="/student/maintenance/:requestId"
+            />
+            <Route element={<VisitorPage />} path="/student/visitors" />
+            <Route
+              element={<VisitorDetailPage />}
+              path="/student/visitors/:visitorId"
             />
             <Route
-              element={
-                <Placeholder
-                  description="Submit and track your maintenance requests."
-                  title="Maintenance requests"
-                />
-              }
-              path="/student/maintenance"
-            />
-            <Route
-              element={
-                <Placeholder
-                  description="Register and review your visitor requests."
-                  title="Visitor registration"
-                />
-              }
-              path="/student/visitors"
-            />
-            <Route
-              element={
-                <Placeholder
-                  description="Read hostel announcements."
-                  title="Announcements"
-                />
-              }
+              element={<AnnouncementPage />}
               path="/student/announcements"
             />
             <Route
-              element={
-                <Placeholder
-                  description="View your in-app notifications."
-                  title="Notifications"
-                />
-              }
+              element={<NotificationPage />}
               path="/student/notifications"
             />
             <Route
@@ -112,51 +96,27 @@ export function AppRouter() {
               element={<AdminStudentDetailPage />}
               path="/admin/students/:studentId"
             />
+            <Route element={<AdminRoomListPage />} path="/admin/rooms" />
             <Route
-              element={
-                <Placeholder
-                  description="Manage hostel room information."
-                  title="Room management"
-                />
-              }
-              path="/admin/rooms"
+              element={<AdminRoomDetailPage />}
+              path="/admin/rooms/:roomId"
             />
             <Route
-              element={
-                <Placeholder
-                  description="Allocate students to available rooms."
-                  title="Room allocation"
-                />
-              }
+              element={<AdminAllocationPage />}
               path="/admin/allocations"
             />
+            <Route element={<MaintenancePage />} path="/admin/maintenance" />
             <Route
-              element={
-                <Placeholder
-                  description="Review and assign maintenance requests."
-                  title="Maintenance management"
-                />
-              }
-              path="/admin/maintenance"
+              element={<MaintenanceDetailPage />}
+              path="/admin/maintenance/:requestId"
             />
+            <Route element={<VisitorPage />} path="/admin/visitors" />
             <Route
-              element={
-                <Placeholder
-                  description="Approve or reject visitor requests."
-                  title="Visitor approvals"
-                />
-              }
-              path="/admin/visitors"
+              element={<VisitorDetailPage />}
+              path="/admin/visitors/:visitorId"
             />
-            <Route
-              element={
-                <Placeholder
-                  description="Create and manage hostel announcements."
-                  title="Announcement management"
-                />
-              }
-              path="/admin/announcements"
-            />
+            <Route element={<AnnouncementPage />} path="/admin/announcements" />
+            <Route element={<NotificationPage />} path="/admin/notifications" />
             <Route
               element={
                 <Placeholder
@@ -191,23 +151,22 @@ export function AppRouter() {
               element={<MaintenanceDashboardPage />}
               path="/maintenance/dashboard"
             />
+            <Route element={<MaintenancePage />} path="/maintenance/requests" />
             <Route
-              element={
-                <Placeholder
-                  description="View maintenance requests assigned to you."
-                  title="Assigned requests"
-                />
-              }
-              path="/maintenance/requests"
+              element={<MaintenanceDetailPage />}
+              path="/maintenance/requests/:requestId"
             />
             <Route
-              element={
-                <Placeholder
-                  description="Review your maintenance request history."
-                  title="Maintenance history"
-                />
-              }
+              element={<MaintenancePage historyOnly />}
               path="/maintenance/history"
+            />
+            <Route
+              element={<AnnouncementPage />}
+              path="/maintenance/announcements"
+            />
+            <Route
+              element={<NotificationPage />}
+              path="/maintenance/notifications"
             />
           </Route>
 
@@ -216,23 +175,22 @@ export function AppRouter() {
               element={<SecurityDashboardPage />}
               path="/security/dashboard"
             />
+            <Route element={<VisitorPage />} path="/security/visitors" />
             <Route
-              element={
-                <Placeholder
-                  description="View approved visitors and record entry or exit."
-                  title="Approved visitors"
-                />
-              }
-              path="/security/visitors"
+              element={<VisitorDetailPage />}
+              path="/security/visitors/:visitorId"
             />
             <Route
-              element={
-                <Placeholder
-                  description="Review recorded visitor entry and exit history."
-                  title="Visitor history"
-                />
-              }
+              element={<VisitorPage historyOnly />}
               path="/security/history"
+            />
+            <Route
+              element={<AnnouncementPage />}
+              path="/security/announcements"
+            />
+            <Route
+              element={<NotificationPage />}
+              path="/security/notifications"
             />
           </Route>
         </Route>

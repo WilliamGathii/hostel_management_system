@@ -141,12 +141,14 @@ describe('Student feature routing', () => {
     }
   );
 
-  test('keeps other module routes as placeholders', () => {
+  test('loads the Admin room management route', () => {
     renderWithAuth(<AppRouter />, {
       authValue: authenticatedUser('admin'),
       route: '/admin/rooms',
     });
 
-    expect(screen.getByText('No rooms have been added.')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Room Management' })
+    ).toBeInTheDocument();
   });
 });
