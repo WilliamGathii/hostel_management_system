@@ -379,7 +379,7 @@ This page structure is proposed for future implementation only.
 ### Public Pages
 
 - Login
-- Student registration
+- No public Student registration; Admin-controlled Student creation
 - Forgot password placeholder
 - Unauthorized page
 - Not found page

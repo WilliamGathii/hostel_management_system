@@ -2,11 +2,12 @@ import { forwardRef, useState } from 'react';
 import { LuEye, LuEyeOff } from 'react-icons/lu';
 
 export const PasswordField = forwardRef(function PasswordField(
-  { label = 'Password', name, error, required = false, ...inputProps },
+  { label = 'Password', name, error, hint, required = false, ...inputProps },
   ref
 ) {
   const [isVisible, setIsVisible] = useState(false);
   const errorId = error ? `${name}-error` : undefined;
+  const hintId = hint && !error ? `${name}-hint` : undefined;
 
   return (
     <div>
@@ -19,7 +20,7 @@ export const PasswordField = forwardRef(function PasswordField(
       </label>
       <div className="relative">
         <input
-          aria-describedby={errorId}
+          aria-describedby={errorId || hintId}
           aria-invalid={Boolean(error)}
           className="min-h-11 w-full rounded-card border border-border bg-card py-2.5 pr-12 pl-3.5 text-sm text-text outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary-soft"
           id={name}
@@ -45,6 +46,10 @@ export const PasswordField = forwardRef(function PasswordField(
       {error ? (
         <p className="mt-1.5 text-sm text-error" id={errorId}>
           {error}
+        </p>
+      ) : hint ? (
+        <p className="mt-1.5 text-sm text-muted" id={hintId}>
+          {hint}
         </p>
       ) : null}
     </div>

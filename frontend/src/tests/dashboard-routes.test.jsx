@@ -71,7 +71,7 @@ describe('dashboard routing', () => {
   test('keeps non-dashboard module routes as placeholders', () => {
     renderWithAuth(<AppRouter />, {
       authValue: authenticatedUser('student'),
-      route: '/student/profile',
+      route: '/student/room',
     });
 
     expect(

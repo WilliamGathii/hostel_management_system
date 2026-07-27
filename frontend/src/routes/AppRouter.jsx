@@ -1,11 +1,14 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { LoginPage } from '../features/authentication/pages/LoginPage';
-import { RegisterPage } from '../features/authentication/pages/RegisterPage';
 import { AdminDashboardPage } from '../features/dashboard/pages/AdminDashboardPage';
 import { MaintenanceDashboardPage } from '../features/dashboard/pages/MaintenanceDashboardPage';
 import { SecurityDashboardPage } from '../features/dashboard/pages/SecurityDashboardPage';
 import { StudentDashboardPage } from '../features/dashboard/pages/StudentDashboardPage';
+import { AdminStudentCreatePage } from '../features/students/pages/AdminStudentCreatePage';
+import { AdminStudentDetailPage } from '../features/students/pages/AdminStudentDetailPage';
+import { AdminStudentListPage } from '../features/students/pages/AdminStudentListPage';
+import { StudentProfilePage } from '../features/students/pages/StudentProfilePage';
 import { AppLayout } from '../layouts/AppLayout';
 import { AuthLayout } from '../layouts/AuthLayout';
 import { FeaturePlaceholderPage } from '../pages/FeaturePlaceholderPage';
@@ -28,7 +31,6 @@ export function AppRouter() {
       <Route element={<PublicOnlyRoute />}>
         <Route element={<AuthLayout />}>
           <Route element={<LoginPage />} path="/login" />
-          <Route element={<RegisterPage />} path="/register" />
           <Route element={<ForgotPasswordPage />} path="/forgot-password" />
         </Route>
       </Route>
@@ -42,15 +44,7 @@ export function AppRouter() {
               element={<StudentDashboardPage />}
               path="/student/dashboard"
             />
-            <Route
-              element={
-                <Placeholder
-                  description="View and update your student information."
-                  title="Profile"
-                />
-              }
-              path="/student/profile"
-            />
+            <Route element={<StudentProfilePage />} path="/student/profile" />
             <Route
               element={
                 <Placeholder
@@ -109,14 +103,14 @@ export function AppRouter() {
 
           <Route element={<RoleRoute allowedRoles={['admin']} />}>
             <Route element={<AdminDashboardPage />} path="/admin/dashboard" />
+            <Route element={<AdminStudentListPage />} path="/admin/students" />
             <Route
-              element={
-                <Placeholder
-                  description="Manage Student accounts and status."
-                  title="Student management"
-                />
-              }
-              path="/admin/students"
+              element={<AdminStudentCreatePage />}
+              path="/admin/students/new"
+            />
+            <Route
+              element={<AdminStudentDetailPage />}
+              path="/admin/students/:studentId"
             />
             <Route
               element={

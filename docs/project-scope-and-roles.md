@@ -103,12 +103,12 @@ These items are not part of the first version unless the project scope is change
 
 The first version will use four main system roles.
 
-| Role | Main Purpose |
-| --- | --- |
-| Student | Uses the system to manage hostel-related personal tasks. |
-| Admin | Manages hostel records, allocations, approvals, announcements, payments, and reports. |
-| Maintenance Staff | Views assigned maintenance work and updates request progress. |
-| Security Staff | Checks visitor approval status and records visitor entry verification. |
+| Role              | Main Purpose                                                                          |
+| ----------------- | ------------------------------------------------------------------------------------- |
+| Student           | Uses the system to manage hostel-related personal tasks.                              |
+| Admin             | Manages hostel records, allocations, approvals, announcements, payments, and reports. |
+| Maintenance Staff | Views assigned maintenance work and updates request progress.                         |
+| Security Staff    | Checks visitor approval status and records visitor entry verification.                |
 
 No separate Warden role will be created. Any administrative hostel duties that could normally be handled by a Warden will be handled by the Admin in this version.
 
@@ -118,11 +118,17 @@ No separate Finance or Accounts role will be created. The Admin will manage simu
 
 ### Student
 
-Students will be able to use approved student-facing features such as registration, login, profile viewing or updates, room allocation viewing, maintenance request submission and tracking, visitor registration, announcements, notifications, and placeholder payment history where enabled.
+Students will use Admin-created accounts to log in, view or update approved
+profile fields, view room allocation, submit and track maintenance requests,
+register visitors, and view announcements, notifications, and placeholder
+payment history where enabled.
 
 ### Admin
 
-Admins will manage hostel operations such as student records, room records, room allocation, maintenance oversight, visitor approval, announcements, reports, user roles, and placeholder payment records where enabled.
+Admins will create and edit Student accounts and manage hostel operations such
+as room records, room allocation, maintenance oversight, visitor approval,
+announcements, reports, user roles, and placeholder payment records where
+enabled.
 
 ### Maintenance Staff
 

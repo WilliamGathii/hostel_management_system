@@ -116,7 +116,8 @@ const adminQuickActions = [
 const adminSummaryCards = [
   {
     title: 'Students',
-    description: 'Student totals will appear after the student module is added.',
+    description:
+      'Student totals will appear when dashboard statistics are connected.',
     Icon: LuGraduationCap,
     tone: 'information',
   },

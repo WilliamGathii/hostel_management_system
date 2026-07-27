@@ -15,54 +15,56 @@ There is no separate Warden role. There is no separate Finance or Accounts role.
 
 ## Permission Labels
 
-| Label | Meaning |
-| --- | --- |
-| Allowed | The role can perform the action. |
-| Own records only | The role can perform the action only for records that belong to them. |
-| Assigned records only | The role can perform the action only for records assigned to them. |
-| Not allowed | The role cannot perform the action. |
+| Label                 | Meaning                                                               |
+| --------------------- | --------------------------------------------------------------------- |
+| Allowed               | The role can perform the action.                                      |
+| Own records only      | The role can perform the action only for records that belong to them. |
+| Assigned records only | The role can perform the action only for records assigned to them.    |
+| Not allowed           | The role cannot perform the action.                                   |
 
 ## Permission Matrix
 
-| Permission | Student | Admin | Maintenance Staff | Security Staff |
-| --- | --- | --- | --- | --- |
-| Register an account | Allowed | Not allowed | Not allowed | Not allowed |
-| Log in | Allowed | Allowed | Allowed | Allowed |
-| View own profile | Own records only | Own records only | Own records only | Own records only |
-| Update own profile | Own records only | Own records only | Own records only | Own records only |
-| View all students | Not allowed | Allowed | Not allowed | Not allowed |
-| Change student status | Not allowed | Allowed | Not allowed | Not allowed |
-| View rooms | Own records only | Allowed | Not allowed | Not allowed |
-| Create rooms | Not allowed | Allowed | Not allowed | Not allowed |
-| Update rooms | Not allowed | Allowed | Not allowed | Not allowed |
-| Allocate rooms | Not allowed | Allowed | Not allowed | Not allowed |
-| View own allocation | Own records only | Allowed | Not allowed | Not allowed |
-| Submit maintenance request | Allowed | Allowed | Not allowed | Not allowed |
-| View own maintenance requests | Own records only | Allowed | Not allowed | Not allowed |
-| View all maintenance requests | Not allowed | Allowed | Assigned records only | Not allowed |
-| Assign maintenance requests | Not allowed | Allowed | Not allowed | Not allowed |
-| Update maintenance request status | Not allowed | Allowed | Assigned records only | Not allowed |
-| Register visitors | Allowed | Allowed | Not allowed | Not allowed |
-| View own visitors | Own records only | Allowed | Not allowed | Not allowed |
-| View all visitors | Not allowed | Allowed | Not allowed | Allowed |
-| Approve or reject visitors | Not allowed | Allowed | Not allowed | Not allowed |
-| Verify visitor entry | Not allowed | Allowed | Not allowed | Allowed |
-| Verify visitor exit | Not allowed | Allowed | Not allowed | Allowed |
-| View announcements | Allowed | Allowed | Allowed | Allowed |
-| Create announcements | Not allowed | Allowed | Not allowed | Not allowed |
-| Update announcements | Not allowed | Allowed | Not allowed | Not allowed |
-| Delete announcements | Not allowed | Allowed | Not allowed | Not allowed |
-| View own payment records | Own records only | Allowed | Not allowed | Not allowed |
-| Submit simulated payment details | Allowed | Allowed | Not allowed | Not allowed |
-| View all payment records | Not allowed | Allowed | Not allowed | Not allowed |
-| Update payment status | Not allowed | Allowed | Not allowed | Not allowed |
-| View reports | Not allowed | Allowed | Not allowed | Not allowed |
-| View audit logs | Not allowed | Allowed | Not allowed | Not allowed |
+| Permission                        | Student          | Admin            | Maintenance Staff     | Security Staff   |
+| --------------------------------- | ---------------- | ---------------- | --------------------- | ---------------- |
+| Self-register a Student account   | Not allowed      | Not allowed      | Not allowed           | Not allowed      |
+| Create a Student account          | Not allowed      | Allowed          | Not allowed           | Not allowed      |
+| Edit a Student account            | Not allowed      | Allowed          | Not allowed           | Not allowed      |
+| Log in                            | Allowed          | Allowed          | Allowed               | Allowed          |
+| View own profile                  | Own records only | Own records only | Own records only      | Own records only |
+| Update own profile                | Own records only | Own records only | Own records only      | Own records only |
+| View all students                 | Not allowed      | Allowed          | Not allowed           | Not allowed      |
+| Change student status             | Not allowed      | Allowed          | Not allowed           | Not allowed      |
+| View rooms                        | Own records only | Allowed          | Not allowed           | Not allowed      |
+| Create rooms                      | Not allowed      | Allowed          | Not allowed           | Not allowed      |
+| Update rooms                      | Not allowed      | Allowed          | Not allowed           | Not allowed      |
+| Allocate rooms                    | Not allowed      | Allowed          | Not allowed           | Not allowed      |
+| View own allocation               | Own records only | Allowed          | Not allowed           | Not allowed      |
+| Submit maintenance request        | Allowed          | Allowed          | Not allowed           | Not allowed      |
+| View own maintenance requests     | Own records only | Allowed          | Not allowed           | Not allowed      |
+| View all maintenance requests     | Not allowed      | Allowed          | Assigned records only | Not allowed      |
+| Assign maintenance requests       | Not allowed      | Allowed          | Not allowed           | Not allowed      |
+| Update maintenance request status | Not allowed      | Allowed          | Assigned records only | Not allowed      |
+| Register visitors                 | Allowed          | Allowed          | Not allowed           | Not allowed      |
+| View own visitors                 | Own records only | Allowed          | Not allowed           | Not allowed      |
+| View all visitors                 | Not allowed      | Allowed          | Not allowed           | Allowed          |
+| Approve or reject visitors        | Not allowed      | Allowed          | Not allowed           | Not allowed      |
+| Verify visitor entry              | Not allowed      | Allowed          | Not allowed           | Allowed          |
+| Verify visitor exit               | Not allowed      | Allowed          | Not allowed           | Allowed          |
+| View announcements                | Allowed          | Allowed          | Allowed               | Allowed          |
+| Create announcements              | Not allowed      | Allowed          | Not allowed           | Not allowed      |
+| Update announcements              | Not allowed      | Allowed          | Not allowed           | Not allowed      |
+| Delete announcements              | Not allowed      | Allowed          | Not allowed           | Not allowed      |
+| View own payment records          | Own records only | Allowed          | Not allowed           | Not allowed      |
+| Submit simulated payment details  | Allowed          | Allowed          | Not allowed           | Not allowed      |
+| View all payment records          | Not allowed      | Allowed          | Not allowed           | Not allowed      |
+| Update payment status             | Not allowed      | Allowed          | Not allowed           | Not allowed      |
+| View reports                      | Not allowed      | Allowed          | Not allowed           | Not allowed      |
+| View audit logs                   | Not allowed      | Allowed          | Not allowed           | Not allowed      |
 
 ## Student Rules
 
 1. Students can manage only their own profile, maintenance requests, visitors, allocation details, notifications, and simulated payment records.
-2. Students cannot manage rooms or other users.
+2. Students cannot self-register or manage other users.
 3. Students cannot book rooms.
 4. Students cannot allocate rooms.
 5. Students cannot approve visitors.
@@ -71,13 +73,14 @@ There is no separate Warden role. There is no separate Finance or Accounts role.
 
 ## Admin Rules
 
-1. Admin users can manage students, rooms, allocations, maintenance assignments, visitors, announcements, payments, reports, and audit logs.
-2. Admin users approve or reject visitors.
-3. Admin users control room allocation.
-4. Admin users manage simulated payment records.
-5. Admin users should not view user passwords.
-6. Admin users handle general hostel administrative duties in this version.
-7. Admin accounts are created through the safe initial setup process or future Admin user management, not public registration.
+1. Admin users create and edit Student accounts and manage their status.
+2. Admin users can manage rooms, allocations, maintenance assignments, visitors, announcements, payments, reports, and audit logs.
+3. Admin users approve or reject visitors.
+4. Admin users control room allocation.
+5. Admin users manage simulated payment records.
+6. Admin users should not view password hashes or existing passwords.
+7. Admin users handle general hostel administrative duties in this version.
+8. Admin accounts are created through the safe initial setup process or future Admin user management, not public registration.
 
 ## Maintenance Staff Rules
 

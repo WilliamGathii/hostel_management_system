@@ -1,7 +1,6 @@
 const request = require('supertest');
 
 jest.mock('../../src/services/auth.service', () => ({
-  registerStudent: jest.fn(),
   login: jest.fn(),
   logout: jest.fn(),
   getCurrentUser: jest.fn(),
@@ -25,26 +24,9 @@ const activeUser = {
   account_status: 'active',
 };
 
-const validRegistration = {
-  full_name: 'Student User',
-  email: 'student@example.com',
-  phone: '+254700000001',
-  password: 'Student123',
-  student_number: 'STU001',
-};
-
 describe('authentication routes', () => {
   beforeEach(() => {
     userModel.findUserById.mockResolvedValue(activeUser);
-    authService.registerStudent.mockResolvedValue({
-      token: 'registration-test-token',
-      tokenType: 'Bearer',
-      expiresIn: '1h',
-      user: activeUser,
-      profile: {
-        student_number: 'STU001',
-      },
-    });
     authService.login.mockResolvedValue({
       token: 'login-test-token',
       tokenType: 'Bearer',
@@ -60,37 +42,14 @@ describe('authentication routes', () => {
     });
   });
 
-  test('POST /api/v1/auth/register creates a Student response', async () => {
+  test('POST /api/v1/auth/register is not publicly available', async () => {
     const response = await request(app)
       .post('/api/v1/auth/register')
-      .send({
-        ...validRegistration,
-        role: 'admin',
-        account_status: 'suspended',
-      });
+      .send({ email: 'student@example.com', password: 'Student123' });
 
-    expect(response.status).toBe(201);
-    expect(response.body.success).toBe(true);
-    expect(response.body.data.user.role).toBe('student');
-    expect(response.body.data).not.toHaveProperty('password');
-    expect(response.body.data).not.toHaveProperty('password_hash');
-    expect(authService.registerStudent).toHaveBeenCalledWith(
-      expect.not.objectContaining({
-        role: expect.anything(),
-        account_status: expect.anything(),
-      })
-    );
-  });
-
-  test('POST /api/v1/auth/register returns validation errors', async () => {
-    const response = await request(app)
-      .post('/api/v1/auth/register')
-      .send({ email: 'invalid', password: 'short' });
-
-    expect(response.status).toBe(422);
+    expect(response.status).toBe(404);
     expect(response.body.success).toBe(false);
-    expect(response.body.message).toBe('Validation failed');
-    expect(response.body.errors.length).toBeGreaterThan(0);
+    expect(response.body.message).toContain('Route not found');
   });
 
   test('POST /api/v1/auth/login returns a token', async () => {

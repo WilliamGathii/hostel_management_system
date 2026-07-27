@@ -112,16 +112,6 @@ export function LoginPage() {
           Sign in
         </Button>
       </form>
-
-      <p className="mt-6 text-center text-sm text-muted">
-        New student?{' '}
-        <Link
-          className="font-semibold text-information hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          to="/register"
-        >
-          Create a student account
-        </Link>
-      </p>
     </div>
   );
 }

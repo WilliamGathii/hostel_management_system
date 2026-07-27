@@ -1,20 +1,6 @@
 const authService = require('../services/auth.service');
 const { sendSuccess } = require('../utils/api-response');
 
-const register = async (req, res, next) => {
-  try {
-    const result = await authService.registerStudent(req.validatedBody);
-
-    return sendSuccess(res, {
-      statusCode: 201,
-      message: 'Student account registered successfully',
-      data: result,
-    });
-  } catch (error) {
-    return next(error);
-  }
-};
-
 const login = async (req, res, next) => {
   try {
     const result = await authService.login(req.validatedBody);
@@ -59,7 +45,6 @@ const me = async (req, res, next) => {
 };
 
 module.exports = {
-  register,
   login,
   logout,
   me,

@@ -3,8 +3,8 @@
 ## Authentication Overview
 
 The backend uses email and password authentication. Passwords are stored as
-bcrypt hashes. After a successful registration or login, the API returns one
-short-lived JSON Web Token (JWT).
+bcrypt hashes. After a successful login, the API returns one short-lived JSON
+Web Token (JWT).
 
 Authentication applies to these four approved roles:
 
@@ -15,38 +15,33 @@ Authentication applies to these four approved roles:
 
 The system does not have a Warden role or a Finance role.
 
-## Public Student Registration
+## Admin-Controlled Student Registration
 
-`POST /api/v1/auth/register` is the only public registration endpoint. It
-always creates a Student account.
+The system does not provide public Student registration. An authenticated
+Admin creates Student accounts with `POST /api/v1/students`.
 
-Required registration fields:
+Required account fields:
 
 - `full_name`
 - `email`
-- `phone`
 - `password`
 - `student_number`
 
-Optional Student profile fields:
+Optional Student fields:
 
+- `phone`
 - `course`
 - `year_of_study`
 - `emergency_contact_name`
 - `emergency_contact_phone`
 
-Users cannot choose their role or account status. Any submitted `role` or
-`account_status` field is excluded before the account is created. New Student
-accounts are active because the approved scope does not require Admin approval
-for registration.
+The role is always Student and the initial account status is active. The
+request cannot set another role or status.
 
 The email and Student number must be unique. Account and profile creation use
 one database transaction.
 
 ## Admin And Staff Account Rules
-
-Admin, Maintenance Staff, and Security Staff accounts cannot register through
-the public endpoint.
 
 The first Admin is created with the local initial Admin setup script.
 Maintenance Staff and Security Staff accounts will be created through a later
