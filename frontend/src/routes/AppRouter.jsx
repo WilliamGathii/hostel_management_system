@@ -5,6 +5,10 @@ import { AdminDashboardPage } from '../features/dashboard/pages/AdminDashboardPa
 import { MaintenanceDashboardPage } from '../features/dashboard/pages/MaintenanceDashboardPage';
 import { SecurityDashboardPage } from '../features/dashboard/pages/SecurityDashboardPage';
 import { StudentDashboardPage } from '../features/dashboard/pages/StudentDashboardPage';
+import { AdminAllocationPage } from '../features/rooms/pages/AdminAllocationPage';
+import { AdminRoomDetailPage } from '../features/rooms/pages/AdminRoomDetailPage';
+import { AdminRoomListPage } from '../features/rooms/pages/AdminRoomListPage';
+import { StudentRoomPage } from '../features/rooms/pages/StudentRoomPage';
 import { AdminStudentCreatePage } from '../features/students/pages/AdminStudentCreatePage';
 import { AdminStudentDetailPage } from '../features/students/pages/AdminStudentDetailPage';
 import { AdminStudentListPage } from '../features/students/pages/AdminStudentListPage';
@@ -45,15 +49,7 @@ export function AppRouter() {
               path="/student/dashboard"
             />
             <Route element={<StudentProfilePage />} path="/student/profile" />
-            <Route
-              element={
-                <Placeholder
-                  description="View your current room allocation."
-                  title="Room allocation"
-                />
-              }
-              path="/student/room"
-            />
+            <Route element={<StudentRoomPage />} path="/student/room" />
             <Route
               element={
                 <Placeholder
@@ -112,22 +108,13 @@ export function AppRouter() {
               element={<AdminStudentDetailPage />}
               path="/admin/students/:studentId"
             />
+            <Route element={<AdminRoomListPage />} path="/admin/rooms" />
             <Route
-              element={
-                <Placeholder
-                  description="Manage hostel room information."
-                  title="Room management"
-                />
-              }
-              path="/admin/rooms"
+              element={<AdminRoomDetailPage />}
+              path="/admin/rooms/:roomId"
             />
             <Route
-              element={
-                <Placeholder
-                  description="Allocate students to available rooms."
-                  title="Room allocation"
-                />
-              }
+              element={<AdminAllocationPage />}
               path="/admin/allocations"
             />
             <Route
