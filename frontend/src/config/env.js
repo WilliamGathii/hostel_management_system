@@ -5,7 +5,7 @@ const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 const canUseLocalFallback =
   import.meta.env.DEV || import.meta.env.MODE === 'test';
 
-if (!configuredApiBaseUrl) {
+if (!configuredApiBaseUrl && import.meta.env.MODE !== 'test') {
   const message = canUseLocalFallback
     ? `VITE_API_BASE_URL is not set. Using ${LOCAL_API_BASE_URL}.`
     : 'VITE_API_BASE_URL must be configured for this environment.';
