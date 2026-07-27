@@ -18,9 +18,10 @@ The Smart Hostel Management System is a planned web application for managing hos
 ## Current Project Status
 
 The project setup, scope, system design, backend foundation, authentication,
-and frontend foundation are complete. The four role dashboards are being
-developed on `feature/role-dashboards`. Detailed system modules remain
-placeholders for their later development steps.
+frontend foundation, and four role dashboards are complete. Student Profile
+and Admin Student Management are being developed on
+`feature/student-management`. Other system modules remain placeholders for
+their later development steps.
 
 ## Feature-Based Development Timeline
 
@@ -265,9 +266,45 @@ script requires a local development database and refuses to run in production.
 The frontend login and Student registration pages use these authentication
 endpoints. Admin and staff accounts cannot use public registration.
 
-Student management, rooms, allocations, maintenance, visitors, payments,
-announcements, notifications, reports, and audit-log features have not been
-developed yet.
+Rooms, allocations, maintenance, visitors, payments, announcements,
+notifications, reports, and audit-log features have not been developed yet.
+
+## Student Management
+
+Student API endpoints:
+
+```text
+GET   /api/v1/students/me
+PATCH /api/v1/students/me
+GET   /api/v1/students
+GET   /api/v1/students/:studentId
+PATCH /api/v1/students/:studentId/status
+```
+
+Student frontend routes:
+
+| Route                        | Required role | Purpose                         |
+| ---------------------------- | ------------- | ------------------------------- |
+| `/student/profile`           | Student       | View and update own profile     |
+| `/admin/students`            | Admin         | Search and list Student records |
+| `/admin/students/:studentId` | Admin         | View details and update status  |
+
+Run Student backend tests as part of the backend suite:
+
+```bash
+cd backend
+npm test
+```
+
+Run Student frontend tests as part of the frontend suite:
+
+```bash
+cd frontend
+npm test
+```
+
+The existing authentication migration provides the Student tables and fields,
+so Step 8 does not add a migration. Other module routes remain placeholders.
 
 ## Branching Structure
 
@@ -291,6 +328,8 @@ Project setup has been merged into `develop`. New work should use feature branch
 - [Authentication Design](docs/system-design/authentication-design.md)
 - [Frontend Foundation](docs/system-design/frontend-foundation.md)
 - [Role Dashboards](docs/system-design/role-dashboards.md)
+- [Student Field Matrix](docs/system-design/student-fields.md)
+- [Student Management](docs/system-design/student-management.md)
 
 ## Group Members
 
