@@ -7,6 +7,16 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest --runInBand",
+    "test:watch": "jest --watch",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{js,json,md}\" --ignore-path ../.prettierignore",
+    "format:check": "prettier --check \"**/*.{js,json,md}\" --ignore-path ../.prettierignore"
+  },
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
