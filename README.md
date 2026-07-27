@@ -17,10 +17,10 @@ The Smart Hostel Management System is a planned web application for managing hos
 
 ## Current Project Status
 
-The project setup, scope, system design, backend foundation, and backend
-authentication are complete. The frontend foundation and authentication
-interface are being developed on `feature/frontend-foundation`. Full
-dashboards and future system modules have not been developed.
+The project setup, scope, system design, backend foundation, authentication,
+and frontend foundation are complete. The four role dashboards are being
+developed on `feature/role-dashboards`. Detailed system modules remain
+placeholders for their later development steps.
 
 ## Feature-Based Development Timeline
 
@@ -139,17 +139,26 @@ Public frontend routes:
 /unauthorized
 ```
 
-Role home routes:
+Role dashboard routes:
 
-```text
-/student/dashboard
-/admin/dashboard
-/maintenance/dashboard
-/security/dashboard
+| Route                    | Required role     |
+| ------------------------ | ----------------- |
+| `/student/dashboard`     | Student           |
+| `/admin/dashboard`       | Admin             |
+| `/maintenance/dashboard` | Maintenance Staff |
+| `/security/dashboard`    | Security Staff    |
+
+Run all dashboard and frontend tests with:
+
+```bash
+cd frontend
+npm test
 ```
 
-The role home pages and future module routes are placeholders. Full dashboards
-begin in Step 7.
+The four dashboards provide role-aware account information, quick actions,
+workflow guidance, and safe unavailable states. Detailed module pages remain
+placeholders. Dashboard statistics will be connected later when the related
+backend modules provide real data.
 
 ## Backend Setup
 
@@ -281,6 +290,7 @@ Project setup has been merged into `develop`. New work should use feature branch
 - [Folder Ownership](docs/system-design/folder-ownership.md)
 - [Authentication Design](docs/system-design/authentication-design.md)
 - [Frontend Foundation](docs/system-design/frontend-foundation.md)
+- [Role Dashboards](docs/system-design/role-dashboards.md)
 
 ## Group Members
 
