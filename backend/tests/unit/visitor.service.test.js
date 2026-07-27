@@ -9,6 +9,9 @@ jest.mock('../../src/models/visitor.model', () => ({
   createEntryVerification: jest.fn(),
   recordExit: jest.fn(),
 }));
+jest.mock('../../src/services/notification.service', () => ({
+  createNotification: jest.fn(),
+}));
 
 const visitorModel = require('../../src/models/visitor.model');
 const visitorService = require('../../src/services/visitor.service');

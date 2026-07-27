@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { LoginPage } from '../features/authentication/pages/LoginPage';
+import { AnnouncementPage } from '../features/communications/pages/AnnouncementPage';
+import { NotificationPage } from '../features/communications/pages/NotificationPage';
 import { AdminDashboardPage } from '../features/dashboard/pages/AdminDashboardPage';
 import { MaintenanceDashboardPage } from '../features/dashboard/pages/MaintenanceDashboardPage';
 import { SecurityDashboardPage } from '../features/dashboard/pages/SecurityDashboardPage';
@@ -65,21 +67,11 @@ export function AppRouter() {
               path="/student/visitors/:visitorId"
             />
             <Route
-              element={
-                <Placeholder
-                  description="Read hostel announcements."
-                  title="Announcements"
-                />
-              }
+              element={<AnnouncementPage />}
               path="/student/announcements"
             />
             <Route
-              element={
-                <Placeholder
-                  description="View your in-app notifications."
-                  title="Notifications"
-                />
-              }
+              element={<NotificationPage />}
               path="/student/notifications"
             />
             <Route
@@ -123,15 +115,8 @@ export function AppRouter() {
               element={<VisitorDetailPage />}
               path="/admin/visitors/:visitorId"
             />
-            <Route
-              element={
-                <Placeholder
-                  description="Create and manage hostel announcements."
-                  title="Announcement management"
-                />
-              }
-              path="/admin/announcements"
-            />
+            <Route element={<AnnouncementPage />} path="/admin/announcements" />
+            <Route element={<NotificationPage />} path="/admin/notifications" />
             <Route
               element={
                 <Placeholder
@@ -175,6 +160,14 @@ export function AppRouter() {
               element={<MaintenancePage historyOnly />}
               path="/maintenance/history"
             />
+            <Route
+              element={<AnnouncementPage />}
+              path="/maintenance/announcements"
+            />
+            <Route
+              element={<NotificationPage />}
+              path="/maintenance/notifications"
+            />
           </Route>
 
           <Route element={<RoleRoute allowedRoles={['security_staff']} />}>
@@ -190,6 +183,14 @@ export function AppRouter() {
             <Route
               element={<VisitorPage historyOnly />}
               path="/security/history"
+            />
+            <Route
+              element={<AnnouncementPage />}
+              path="/security/announcements"
+            />
+            <Route
+              element={<NotificationPage />}
+              path="/security/notifications"
             />
           </Route>
         </Route>

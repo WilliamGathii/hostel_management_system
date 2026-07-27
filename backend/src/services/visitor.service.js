@@ -1,4 +1,5 @@
 const visitorModel = require('../models/visitor.model');
+const notificationService = require('./notification.service');
 const AppError = require('../utils/app-error');
 
 const requireRole = (user, ...roles) => {
@@ -107,6 +108,17 @@ const updateApproval = async (user, visitorId, approvalStatus) => {
       visitorId,
       approvalStatus,
       user.id,
+      database
+    );
+    await notificationService.createNotification(
+      {
+        user_id: visitor.student_user_id,
+        notification_type: 'visitor_approval',
+        title: 'Visitor request reviewed',
+        message: `${visitor.visitor_name}'s visit was ${approvalStatus}.`,
+        related_entity_type: 'visitor',
+        related_entity_id: visitorId,
+      },
       database
     );
     return visitorModel.findVisitorById(visitorId, database);

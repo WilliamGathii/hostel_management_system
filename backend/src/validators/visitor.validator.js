@@ -84,12 +84,18 @@ const visitorApprovalValidation = [
     .withMessage('Approval status must be approved or rejected'),
 ];
 const visitorVerificationValidation = [
-  body().custom(
-    validateAllowedFields(
-      new Set(['notes']),
-      'Verification details must be an object'
-    )
-  ),
+  body().custom((value) => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      throw new Error('Verification details must be an object');
+    }
+    const unsupportedFields = Object.keys(value).filter(
+      (field) => field !== 'notes'
+    );
+    if (unsupportedFields.length > 0) {
+      throw new Error(`Unsupported field: ${unsupportedFields.join(', ')}`);
+    }
+    return true;
+  }),
   body('notes')
     .optional({ nullable: true })
     .isString()

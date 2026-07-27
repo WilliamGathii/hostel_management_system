@@ -1,4 +1,5 @@
 const maintenanceModel = require('../models/maintenance.model');
+const notificationService = require('./notification.service');
 const AppError = require('../utils/app-error');
 
 const TERMINAL_STATUSES = new Set(['completed', 'rejected', 'cancelled']);
@@ -149,6 +150,17 @@ const assignRequest = async (user, requestId, staffId) => {
     }
 
     await maintenanceModel.assignRequest(requestId, staffId, user.id, database);
+    await notificationService.createNotification(
+      {
+        user_id: staffId,
+        notification_type: 'maintenance_assignment',
+        title: 'Maintenance request assigned',
+        message: `You have been assigned the request "${request.title}".`,
+        related_entity_type: 'maintenance_request',
+        related_entity_id: requestId,
+      },
+      database
+    );
     return maintenanceModel.findRequestById(requestId, database);
   });
 };
@@ -186,6 +198,17 @@ const updateStatus = async (user, requestId, status, note) => {
       status,
       user.id,
       normalizeText(note),
+      database
+    );
+    await notificationService.createNotification(
+      {
+        user_id: request.student_user_id,
+        notification_type: 'maintenance_status',
+        title: 'Maintenance request updated',
+        message: `Your request "${request.title}" is now ${status.replaceAll('_', ' ')}.`,
+        related_entity_type: 'maintenance_request',
+        related_entity_id: requestId,
+      },
       database
     );
     return maintenanceModel.findRequestById(requestId, database);

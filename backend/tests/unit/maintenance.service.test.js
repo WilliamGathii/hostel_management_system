@@ -13,6 +13,9 @@ jest.mock('../../src/models/maintenance.model', () => ({
   updateRequestStatus: jest.fn(),
   insertUpdate: jest.fn(),
 }));
+jest.mock('../../src/services/notification.service', () => ({
+  createNotification: jest.fn(),
+}));
 
 const maintenanceModel = require('../../src/models/maintenance.model');
 const maintenanceService = require('../../src/services/maintenance.service');

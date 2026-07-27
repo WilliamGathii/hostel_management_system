@@ -1,4 +1,5 @@
 const roomModel = require('../models/room.model');
+const notificationService = require('./notification.service');
 const AppError = require('../utils/app-error');
 
 const ADMIN_ROLE = 'admin';
@@ -217,6 +218,17 @@ const createAllocation = async (user, allocationData) => {
         database
       );
       await roomModel.adjustRoomOccupancy(room.id, 1, database);
+      await notificationService.createNotification(
+        {
+          user_id: student.user_id,
+          notification_type: 'room_allocation',
+          title: 'Room allocated',
+          message: `You have been allocated to room ${room.room_number}.`,
+          related_entity_type: 'room_allocation',
+          related_entity_id: allocationId,
+        },
+        database
+      );
 
       return roomModel.findAllocationById(allocationId, database);
     });
