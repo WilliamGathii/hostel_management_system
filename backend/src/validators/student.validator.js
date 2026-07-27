@@ -169,9 +169,12 @@ const handleStudentValidation = (req, _res, next) => {
     return;
   }
 
-  req.validatedBody = matchedData(req, {
+  const validatedBody = matchedData(req, {
     locations: ['body'],
   });
+  delete validatedBody[''];
+
+  req.validatedBody = validatedBody;
   req.validatedQuery = matchedData(req, {
     locations: ['query'],
   });

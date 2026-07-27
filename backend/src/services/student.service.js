@@ -11,6 +11,25 @@ const EDITABLE_PROFILE_FIELDS = [
   'emergency_contact_name',
   'emergency_contact_phone',
 ];
+const SAFE_STUDENT_FIELDS = [
+  'id',
+  'user_id',
+  'student_number',
+  'course',
+  'year_of_study',
+  'emergency_contact_name',
+  'emergency_contact_phone',
+  'profile_created_at',
+  'profile_updated_at',
+  'full_name',
+  'email',
+  'phone',
+  'role',
+  'account_status',
+  'last_login_at',
+  'account_created_at',
+  'account_updated_at',
+];
 
 const requireRole = (user, role) => {
   if (!user) {
@@ -48,6 +67,15 @@ const normalizeProfileUpdate = (profileData) => {
   return normalizedData;
 };
 
+const toSafeStudent = (student) =>
+  SAFE_STUDENT_FIELDS.reduce((safeStudent, field) => {
+    if (Object.hasOwn(student, field)) {
+      safeStudent[field] = student[field];
+    }
+
+    return safeStudent;
+  }, {});
+
 const getMyStudentProfile = async (user) => {
   requireRole(user, STUDENT_ROLE);
 
@@ -57,7 +85,7 @@ const getMyStudentProfile = async (user) => {
     throw new AppError('Student profile was not found', 404);
   }
 
-  return student;
+  return toSafeStudent(student);
 };
 
 const updateMyStudentProfile = async (user, profileData) => {
@@ -84,7 +112,7 @@ const updateMyStudentProfile = async (user, profileData) => {
     throw new AppError('Student profile was not found', 404);
   }
 
-  return updatedStudent;
+  return toSafeStudent(updatedStudent);
 };
 
 const listStudents = async (user, options) => {
@@ -95,7 +123,7 @@ const listStudents = async (user, options) => {
   const totalPages = total === 0 ? 0 : Math.ceil(total / options.limit);
 
   return {
-    students,
+    students: students.map(toSafeStudent),
     pagination: {
       page: options.page,
       limit: options.limit,
@@ -114,7 +142,7 @@ const getStudentById = async (user, studentId) => {
     throw new AppError('Student was not found', 404);
   }
 
-  return student;
+  return toSafeStudent(student);
 };
 
 const updateStudentAccountStatus = async (user, studentId, accountStatus) => {
@@ -143,7 +171,7 @@ const updateStudentAccountStatus = async (user, studentId, accountStatus) => {
     throw new AppError('Student was not found', 404);
   }
 
-  return updatedStudent;
+  return toSafeStudent(updatedStudent);
 };
 
 module.exports = {
