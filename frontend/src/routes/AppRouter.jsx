@@ -5,6 +5,8 @@ import { AdminDashboardPage } from '../features/dashboard/pages/AdminDashboardPa
 import { MaintenanceDashboardPage } from '../features/dashboard/pages/MaintenanceDashboardPage';
 import { SecurityDashboardPage } from '../features/dashboard/pages/SecurityDashboardPage';
 import { StudentDashboardPage } from '../features/dashboard/pages/StudentDashboardPage';
+import { MaintenanceDetailPage } from '../features/maintenance/pages/MaintenanceDetailPage';
+import { MaintenancePage } from '../features/maintenance/pages/MaintenancePage';
 import { AdminAllocationPage } from '../features/rooms/pages/AdminAllocationPage';
 import { AdminRoomDetailPage } from '../features/rooms/pages/AdminRoomDetailPage';
 import { AdminRoomListPage } from '../features/rooms/pages/AdminRoomListPage';
@@ -50,14 +52,10 @@ export function AppRouter() {
             />
             <Route element={<StudentProfilePage />} path="/student/profile" />
             <Route element={<StudentRoomPage />} path="/student/room" />
+            <Route element={<MaintenancePage />} path="/student/maintenance" />
             <Route
-              element={
-                <Placeholder
-                  description="Submit and track your maintenance requests."
-                  title="Maintenance requests"
-                />
-              }
-              path="/student/maintenance"
+              element={<MaintenanceDetailPage />}
+              path="/student/maintenance/:requestId"
             />
             <Route
               element={
@@ -117,14 +115,10 @@ export function AppRouter() {
               element={<AdminAllocationPage />}
               path="/admin/allocations"
             />
+            <Route element={<MaintenancePage />} path="/admin/maintenance" />
             <Route
-              element={
-                <Placeholder
-                  description="Review and assign maintenance requests."
-                  title="Maintenance management"
-                />
-              }
-              path="/admin/maintenance"
+              element={<MaintenanceDetailPage />}
+              path="/admin/maintenance/:requestId"
             />
             <Route
               element={
@@ -178,22 +172,13 @@ export function AppRouter() {
               element={<MaintenanceDashboardPage />}
               path="/maintenance/dashboard"
             />
+            <Route element={<MaintenancePage />} path="/maintenance/requests" />
             <Route
-              element={
-                <Placeholder
-                  description="View maintenance requests assigned to you."
-                  title="Assigned requests"
-                />
-              }
-              path="/maintenance/requests"
+              element={<MaintenanceDetailPage />}
+              path="/maintenance/requests/:requestId"
             />
             <Route
-              element={
-                <Placeholder
-                  description="Review your maintenance request history."
-                  title="Maintenance history"
-                />
-              }
+              element={<MaintenancePage historyOnly />}
               path="/maintenance/history"
             />
           </Route>
