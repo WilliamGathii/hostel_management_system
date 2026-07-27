@@ -31,7 +31,7 @@ const studentQuickActions = [
     Icon: LuBedDouble,
   },
   {
-    title: 'Maintenance request',
+    title: 'Submit maintenance request',
     description: 'Open maintenance request services.',
     path: '/student/maintenance',
     Icon: LuWrench,
