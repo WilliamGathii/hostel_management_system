@@ -1,5 +1,6 @@
 const nodeGlobals = {
   __dirname: 'readonly',
+  Buffer: 'readonly',
   clearTimeout: 'readonly',
   console: 'readonly',
   module: 'readonly',
