@@ -37,10 +37,12 @@ describe('role dashboards', () => {
     ).toBeInTheDocument();
     expect(screen.queryByText('Manage rooms')).not.toBeInTheDocument();
     expect(
-      screen.getByText('Room allocation is not available yet')
+      screen.getByText('No room allocation is available.')
     ).toBeInTheDocument();
     expect(screen.queryByText('Room 101')).not.toBeInTheDocument();
-    expect(screen.getByText(/does not process real money/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/do not represent real money transfers/)
+    ).toBeInTheDocument();
   });
 
   test('shows Admin management actions without invented totals', () => {
@@ -53,20 +55,22 @@ describe('role dashboards', () => {
     });
 
     expect(
-      screen.getByRole('link', { name: /Manage students/ })
+      screen.getByRole('link', { name: /Manage rooms/ })
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('link', { name: /Manage allocations/ })
+      screen.getByRole('link', { name: /Room allocations/ })
     ).toBeInTheDocument();
     expect(
       screen.queryByRole('link', { name: /View profile/ })
     ).not.toBeInTheDocument();
-    expect(screen.getAllByText('Not available yet')).toHaveLength(6);
+    expect(screen.getAllByText('No data')).toHaveLength(4);
     expect(screen.queryByText('0')).not.toBeInTheDocument();
     expect(
-      screen.getByText('No system activity available')
+      screen.getByText('No rooms have been added.')
     ).toBeInTheDocument();
-    expect(screen.getByText(/does not process real money/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/No real money is transferred/)
+    ).toBeInTheDocument();
   });
 
   test('shows Maintenance Staff work links and explanatory guides', () => {
@@ -87,10 +91,10 @@ describe('role dashboards', () => {
     expect(screen.queryByText('Manage students')).not.toBeInTheDocument();
     expect(screen.queryByText('Approved visitors')).not.toBeInTheDocument();
     expect(
-      screen.getByText('No assigned request data available')
+      screen.getByText('No assigned maintenance requests are available.')
     ).toBeInTheDocument();
-    expect(screen.getByText('Priority explanation')).toBeInTheDocument();
-    expect(screen.getByText('Status explanation')).toBeInTheDocument();
+    expect(screen.getByText('Priority guide')).toBeInTheDocument();
+    expect(screen.getByText('Work status')).toBeInTheDocument();
   });
 
   test('shows Security Staff workflow and permission limits', () => {
@@ -109,16 +113,16 @@ describe('role dashboards', () => {
       screen.getByRole('link', { name: /Visitor history/ })
     ).toBeInTheDocument();
     expect(
-      screen.getByText('A student registers a visitor.')
+      screen.getByText('Open an approved visitor record.')
     ).toBeInTheDocument();
     expect(
-      screen.getByText('Security Staff records the visitor exit.')
+      screen.getByText('Record entry or exit time.')
     ).toBeInTheDocument();
     expect(
-      screen.getByText('No approved visitor data available')
+      screen.getByText('No approved visitors are available.')
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/cannot approve or reject visitors/)
+      screen.getByText(/cannot approve or reject visitor requests/)
     ).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: /approve|reject/i })

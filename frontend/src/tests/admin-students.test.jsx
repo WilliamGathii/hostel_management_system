@@ -169,7 +169,7 @@ describe('Admin Student list page', () => {
     renderList();
 
     expect(
-      await screen.findByText('No student accounts are available yet')
+      await screen.findByText('No student accounts are available.')
     ).toBeInTheDocument();
   });
 
@@ -181,7 +181,7 @@ describe('Admin Student list page', () => {
     expect(
       await screen.findByText('Student list unavailable')
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /try again/i })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /retry/i })).toBeEnabled();
     expect(
       screen.queryByText('private server details')
     ).not.toBeInTheDocument();
@@ -210,9 +210,8 @@ describe('Admin Student detail page', () => {
     expect(
       screen.queryByRole('button', { name: /delete/i })
     ).not.toBeInTheDocument();
-    expect(
-      screen.getByText(/room, maintenance, visitor and payment information/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText('Account information')).toBeInTheDocument();
+    expect(screen.getByText('Account status')).toBeInTheDocument();
   });
 
   test('requires confirmation and updates an approved status', async () => {

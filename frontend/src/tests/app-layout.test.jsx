@@ -78,7 +78,9 @@ describe('application layout navigation', () => {
     const logout = vi.fn().mockResolvedValue(undefined);
     renderLayout('student', logout);
 
-    await user.click(screen.getByRole('button', { name: /sign out/i }));
+    await user.click(
+      screen.getAllByRole('button', { name: /sign out/i })[0]
+    );
 
     expect(logout).toHaveBeenCalled();
     expect(await screen.findByText('Login destination')).toBeInTheDocument();

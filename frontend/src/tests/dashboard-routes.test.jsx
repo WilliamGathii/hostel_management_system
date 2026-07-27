@@ -75,9 +75,7 @@ describe('dashboard routing', () => {
     });
 
     expect(
-      screen.getByText(
-        'This feature will be added in a later development step.'
-      )
+      screen.getByText('No room allocations are available.')
     ).toBeInTheDocument();
   });
 });

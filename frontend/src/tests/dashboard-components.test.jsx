@@ -49,7 +49,7 @@ describe('shared dashboard components', () => {
       <DashboardStatCard Icon={LuBedDouble} title="Rooms" tone="primary" />
     );
 
-    expect(screen.getByText('Not available yet')).toBeInTheDocument();
+    expect(screen.getByText('No data')).toBeInTheDocument();
     expect(screen.queryByText('0')).not.toBeInTheDocument();
   });
 

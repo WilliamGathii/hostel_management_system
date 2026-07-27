@@ -147,10 +147,6 @@ describe('Student feature routing', () => {
       route: '/admin/rooms',
     });
 
-    expect(
-      screen.getByText(
-        'This feature will be added in a later development step.'
-      )
-    ).toBeInTheDocument();
+    expect(screen.getByText('No rooms have been added.')).toBeInTheDocument();
   });
 });
