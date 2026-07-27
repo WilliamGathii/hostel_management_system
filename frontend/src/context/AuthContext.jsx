@@ -109,39 +109,6 @@ export function AuthProvider({ children }) {
     [clearSession]
   );
 
-  const registerStudent = useCallback(
-    async (registrationData) => {
-      setAuthError(null);
-
-      try {
-        const result = await authService.registerStudent(registrationData);
-
-        if (!result.token) {
-          return {
-            ...result,
-            user: null,
-          };
-        }
-
-        const account = await authService.getCurrentUser();
-        const currentUser = combineAccount(account);
-
-        setAccessToken(getAccessToken());
-        setUser(currentUser);
-
-        return {
-          ...result,
-          user: currentUser,
-        };
-      } catch (error) {
-        clearSession();
-        setAuthError(error);
-        throw error;
-      }
-    },
-    [clearSession]
-  );
-
   const logout = useCallback(async () => {
     setAuthError(null);
 
@@ -159,20 +126,10 @@ export function AuthProvider({ children }) {
       isLoading,
       authError,
       login,
-      registerStudent,
       logout,
       refreshUser,
     }),
-    [
-      accessToken,
-      authError,
-      isLoading,
-      login,
-      logout,
-      refreshUser,
-      registerStudent,
-      user,
-    ]
+    [accessToken, authError, isLoading, login, logout, refreshUser, user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

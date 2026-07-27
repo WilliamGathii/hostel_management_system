@@ -5,6 +5,8 @@ jest.mock('../../src/services/student.service', () => ({
   updateMyStudentProfile: jest.fn(),
   listStudents: jest.fn(),
   getStudentById: jest.fn(),
+  createStudent: jest.fn(),
+  updateStudent: jest.fn(),
   updateStudentAccountStatus: jest.fn(),
 }));
 
@@ -85,6 +87,8 @@ describe('student routes', () => {
       },
     });
     studentService.getStudentById.mockResolvedValue(safeStudent);
+    studentService.createStudent.mockResolvedValue(safeStudent);
+    studentService.updateStudent.mockResolvedValue(safeStudent);
     studentService.updateStudentAccountStatus.mockImplementation(
       async (_user, _studentId, accountStatus) => ({
         ...safeStudent,
@@ -234,6 +238,64 @@ describe('student routes', () => {
     expect(studentService.listStudents).not.toHaveBeenCalled();
   });
 
+  test('POST /api/v1/students creates a Student for an Admin', async () => {
+    const response = await request(app)
+      .post('/api/v1/students')
+      .set('Authorization', authorization(users.admin))
+      .send({
+        full_name: 'New Student',
+        email: 'new.student@example.com',
+        phone: '+254700000010',
+        student_number: 'STU010',
+        password: 'Student123',
+      });
+
+    expect(response.status).toBe(201);
+    expect(studentService.createStudent).toHaveBeenCalledWith(
+      expect.objectContaining({ role: 'admin' }),
+      expect.objectContaining({
+        full_name: 'New Student',
+        email: 'new.student@example.com',
+        student_number: 'STU010',
+        password: 'Student123',
+      })
+    );
+    expect(response.body.data.student).not.toHaveProperty('password_hash');
+  });
+
+  test('POST /api/v1/students rejects protected account fields', async () => {
+    const response = await request(app)
+      .post('/api/v1/students')
+      .set('Authorization', authorization(users.admin))
+      .send({
+        full_name: 'New Student',
+        email: 'new.student@example.com',
+        student_number: 'STU010',
+        password: 'Student123',
+        role: 'admin',
+      });
+
+    expect(response.status).toBe(422);
+    expect(studentService.createStudent).not.toHaveBeenCalled();
+  });
+
+  test.each(['student', 'maintenance_staff', 'security_staff'])(
+    'POST /api/v1/students rejects the %s role',
+    async (role) => {
+      const response = await request(app)
+        .post('/api/v1/students')
+        .set('Authorization', authorization(users[role]))
+        .send({
+          full_name: 'New Student',
+          email: 'new.student@example.com',
+          student_number: 'STU010',
+          password: 'Student123',
+        });
+
+      expect(response.status).toBe(403);
+    }
+  );
+
   test('GET /api/v1/students/:studentId returns one Student for an Admin', async () => {
     const response = await request(app)
       .get(`/api/v1/students/${studentId}`)
@@ -258,6 +320,52 @@ describe('student routes', () => {
       .set('Authorization', authorization(users.admin));
 
     expect(response.status).toBe(404);
+  });
+
+  test('PATCH /api/v1/students/:studentId edits approved fields', async () => {
+    const response = await request(app)
+      .patch(`/api/v1/students/${studentId}`)
+      .set('Authorization', authorization(users.admin))
+      .send({
+        full_name: 'Updated Student',
+        email: 'updated.student@example.com',
+        student_number: 'STU002',
+        course: 'Computer Science',
+      });
+
+    expect(response.status).toBe(200);
+    expect(studentService.updateStudent).toHaveBeenCalledWith(
+      expect.objectContaining({ role: 'admin' }),
+      studentId,
+      {
+        full_name: 'Updated Student',
+        email: 'updated.student@example.com',
+        student_number: 'STU002',
+        course: 'Computer Science',
+      }
+    );
+  });
+
+  test.each(['role', 'account_status', 'password', 'password_hash', 'id'])(
+    'PATCH /api/v1/students/:studentId rejects protected field %s',
+    async (field) => {
+      const response = await request(app)
+        .patch(`/api/v1/students/${studentId}`)
+        .set('Authorization', authorization(users.admin))
+        .send({ [field]: 'unsupported' });
+
+      expect(response.status).toBe(422);
+      expect(studentService.updateStudent).not.toHaveBeenCalled();
+    }
+  );
+
+  test('a Student cannot edit another Student account', async () => {
+    const response = await request(app)
+      .patch(`/api/v1/students/${studentId}`)
+      .set('Authorization', authorization(users.student))
+      .send({ full_name: 'Unsupported Change' });
+
+    expect(response.status).toBe(403);
   });
 
   test.each(['active', 'suspended', 'inactive'])(

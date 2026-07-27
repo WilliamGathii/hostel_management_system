@@ -38,6 +38,9 @@ describe('login page', () => {
 
     expect(await screen.findByText('Email is required')).toBeInTheDocument();
     expect(screen.getByText('Password is required')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: /create a student account/i })
+    ).not.toBeInTheDocument();
   });
 
   test('shows invalid-email validation', async () => {

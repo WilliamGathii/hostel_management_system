@@ -65,6 +65,40 @@ const getStudent = async (req, res, next) => {
   }
 };
 
+const createStudent = async (req, res, next) => {
+  try {
+    const student = await studentService.createStudent(
+      req.user,
+      req.validatedBody
+    );
+
+    return sendSuccess(res, {
+      statusCode: 201,
+      message: 'Student account created successfully',
+      data: { student },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const updateStudent = async (req, res, next) => {
+  try {
+    const student = await studentService.updateStudent(
+      req.user,
+      req.validatedParams.studentId,
+      req.validatedBody
+    );
+
+    return sendSuccess(res, {
+      message: 'Student account updated successfully',
+      data: { student },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 const updateStudentStatus = async (req, res, next) => {
   try {
     const student = await studentService.updateStudentAccountStatus(
@@ -87,5 +121,7 @@ module.exports = {
   updateMyProfile,
   listStudents,
   getStudent,
+  createStudent,
+  updateStudent,
   updateStudentStatus,
 };

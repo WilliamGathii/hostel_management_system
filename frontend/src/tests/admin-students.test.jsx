@@ -4,16 +4,21 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { Route, Routes } from 'react-router-dom';
 
 vi.mock('../features/students/services/student.service', () => ({
+  createStudent: vi.fn(),
   getStudentById: vi.fn(),
   getStudents: vi.fn(),
+  updateStudent: vi.fn(),
   updateStudentStatus: vi.fn(),
 }));
 
+import { AdminStudentCreatePage } from '../features/students/pages/AdminStudentCreatePage';
 import { AdminStudentDetailPage } from '../features/students/pages/AdminStudentDetailPage';
 import { AdminStudentListPage } from '../features/students/pages/AdminStudentListPage';
 import {
+  createStudent,
   getStudentById,
   getStudents,
+  updateStudent,
   updateStudentStatus,
 } from '../features/students/services/student.service';
 import { renderWithAuth } from './test-utils';
@@ -56,10 +61,26 @@ const renderDetail = () =>
     }
   );
 
+const renderCreate = () =>
+  renderWithAuth(
+    <Routes>
+      <Route element={<AdminStudentCreatePage />} path="/admin/students/new" />
+      <Route
+        element={<div>Created Student destination</div>}
+        path="/admin/students/:studentId"
+      />
+    </Routes>,
+    {
+      route: '/admin/students/new',
+    }
+  );
+
 describe('Admin Student list page', () => {
   beforeEach(() => {
     getStudents.mockReset();
     getStudentById.mockReset();
+    createStudent.mockReset();
+    updateStudent.mockReset();
     updateStudentStatus.mockReset();
   });
 
@@ -171,6 +192,8 @@ describe('Admin Student detail page', () => {
   beforeEach(() => {
     getStudents.mockReset();
     getStudentById.mockReset();
+    createStudent.mockReset();
+    updateStudent.mockReset();
     updateStudentStatus.mockReset();
   });
 
@@ -225,6 +248,42 @@ describe('Admin Student detail page', () => {
     ).toBeInTheDocument();
   });
 
+  test('allows an Admin to edit approved Student account fields', async () => {
+    const user = userEvent.setup();
+    getStudentById.mockResolvedValue(student);
+    updateStudent.mockResolvedValue({
+      ...student,
+      full_name: 'Amina Updated',
+    });
+
+    renderDetail();
+    await user.click(
+      await screen.findByRole('button', { name: /edit account/i })
+    );
+    const nameInput = screen.getByRole('textbox', { name: /full name/i });
+    await user.clear(nameInput);
+    await user.type(nameInput, 'Amina Updated');
+    await user.click(screen.getByRole('button', { name: /save changes/i }));
+
+    await waitFor(() =>
+      expect(updateStudent).toHaveBeenCalledWith(
+        student.id,
+        expect.objectContaining({
+          full_name: 'Amina Updated',
+          email: student.email,
+          student_number: student.student_number,
+        })
+      )
+    );
+    const updatePayload = updateStudent.mock.calls[0][1];
+    expect(updatePayload).not.toHaveProperty('password');
+    expect(updatePayload).not.toHaveProperty('role');
+    expect(updatePayload).not.toHaveProperty('account_status');
+    expect(
+      await screen.findByText('Student account updated successfully.')
+    ).toBeInTheDocument();
+  });
+
   test('shows a safe missing-Student state', async () => {
     getStudentById.mockResolvedValue(null);
 
@@ -233,6 +292,50 @@ describe('Admin Student detail page', () => {
     expect(await screen.findByText('Student unavailable')).toBeInTheDocument();
     expect(
       screen.getByText('The student record could not be found or loaded.')
+    ).toBeInTheDocument();
+  });
+});
+
+describe('Admin Student creation page', () => {
+  beforeEach(() => {
+    createStudent.mockReset();
+    getStudentById.mockReset();
+    getStudents.mockReset();
+    updateStudent.mockReset();
+    updateStudentStatus.mockReset();
+  });
+
+  test('creates a Student with approved fields and a temporary password', async () => {
+    const user = userEvent.setup();
+    createStudent.mockResolvedValue(student);
+
+    renderCreate();
+    await user.type(screen.getByLabelText(/full name/i), 'Amina Student');
+    await user.type(screen.getByLabelText(/email address/i), student.email);
+    await user.type(
+      screen.getByLabelText(/student number/i),
+      student.student_number
+    );
+    await user.type(screen.getByLabelText(/^password/i), 'Student123');
+    await user.type(screen.getByLabelText(/confirm password/i), 'Student123');
+    await user.click(screen.getByRole('button', { name: /create student/i }));
+
+    await waitFor(() =>
+      expect(createStudent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          full_name: 'Amina Student',
+          email: student.email,
+          student_number: student.student_number,
+          password: 'Student123',
+        })
+      )
+    );
+    const createPayload = createStudent.mock.calls[0][0];
+    expect(createPayload).not.toHaveProperty('role');
+    expect(createPayload).not.toHaveProperty('account_status');
+    expect(createPayload).not.toHaveProperty('confirm_password');
+    expect(
+      await screen.findByText('Created Student destination')
     ).toBeInTheDocument();
   });
 });

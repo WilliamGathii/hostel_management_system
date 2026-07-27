@@ -26,35 +26,36 @@ The project solves common hostel management problems such as:
 
 Students can:
 
-1. Register an account.
-2. Log in.
-3. View and update their own profile.
-4. View their room allocation.
-5. View basic room information related to their allocation.
-6. Submit maintenance requests.
-7. Track maintenance request status.
-8. Register visitors.
-9. View announcements and notifications.
-10. View simulated payment records.
+1. Log in using an account created by an Admin.
+2. View and update their own profile.
+3. View their room allocation.
+4. View basic room information related to their allocation.
+5. Submit maintenance requests.
+6. Track maintenance request status.
+7. Register visitors.
+8. View announcements and notifications.
+9. View simulated payment records.
 
-Students cannot book rooms, allocate rooms, approve visitors, manage payment status, or view other students' private records.
+Students cannot self-register, book rooms, allocate rooms, approve visitors,
+manage payment status, or view other students' private records.
 
 ### Admin
 
 Admins can:
 
 1. Log in.
-2. Manage students.
-3. Manage rooms.
-4. Allocate rooms.
-5. Change and end room allocations.
-6. Manage maintenance requests.
-7. Manage visitors.
-8. Approve or reject visitors.
-9. Manage announcements.
-10. View reports and statistics.
-11. Manage simulated payment records.
-12. View audit logs.
+2. Create and edit Student accounts.
+3. Manage Student account status.
+4. Manage rooms.
+5. Allocate rooms.
+6. Change and end room allocations.
+7. Manage maintenance requests.
+8. Manage visitors.
+9. Approve or reject visitors.
+10. Manage announcements.
+11. View reports and statistics.
+12. Manage simulated payment records.
+13. View audit logs.
 
 Admin users also handle hostel duties that could normally belong to a Warden in this version. There is no separate Warden role.
 
@@ -105,7 +106,7 @@ The first version will include:
 
 1. JWT-based login and protected access.
 2. Four approved roles: Student, Admin, Maintenance Staff, and Security Staff.
-3. Student profile management.
+3. Admin-controlled Student account creation and Student profile management.
 4. Admin-controlled room management.
 5. Admin-controlled room allocation.
 6. Student maintenance request submission and tracking.

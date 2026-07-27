@@ -44,7 +44,6 @@ The router is stored in `frontend/src/routes/AppRouter.jsx`.
 Public routes are:
 
 - `/login`
-- `/register`
 - `/forgot-password`
 - `/unauthorized`
 - The not-found route
@@ -59,7 +58,6 @@ Security Staff.
 - The current user.
 - Initial session loading.
 - Login.
-- Student registration.
 - Logout.
 - Current-user refresh.
 - Safe authentication errors.
@@ -124,16 +122,12 @@ One login page is used for all four roles. It includes email, password,
 password visibility, validation, loading, safe errors, and role-home
 redirection.
 
-## Student Registration Page
+## Student Registration
 
-Public registration creates Student accounts only.
+Public Student registration is not available. Admins create Student accounts
+from `/admin/students/new`.
 
-The page sends only fields accepted by the backend. It has no role selection,
-account status, Admin options, staff options, room allocation, or payment
-fields.
-
-Password confirmation is checked in the frontend and is not sent to the
-backend.
+The public login page does not show a registration link.
 
 ## Application Layout
 
@@ -175,7 +169,7 @@ Tests cover:
 - Authentication service requests.
 - Protected and role routes.
 - Login validation and redirects.
-- Student registration rules and errors.
+- Admin-controlled Student creation rules and errors.
 - Role-specific navigation.
 - Logout.
 - Public support pages.
@@ -186,9 +180,8 @@ Tests mock API requests and do not require a real backend.
 
 The first frontend version does not include:
 
-- Complete dashboards.
-- Student, room, allocation, maintenance, visitor, announcement, payment,
-  report, or audit-log feature logic.
+- Room, allocation, maintenance, visitor, announcement, payment, report, or
+  audit-log feature logic.
 - Password reset.
 - Email verification.
 - Refresh tokens.
@@ -202,8 +195,8 @@ in-app notifications only.
 
 ## Features Planned For Later
 
-Step 7 will build the complete role dashboards. Later steps will replace each
-module placeholder with its approved workflow.
+Later steps will replace each remaining module placeholder with its approved
+workflow.
 
 The payment module will remain simulated and will not connect to a real payment
 gateway.

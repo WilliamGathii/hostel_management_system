@@ -175,6 +175,77 @@ const updateStudentProfile = async (
   }
 };
 
+const updateStudentAccount = async (
+  studentId,
+  studentData,
+  database = getDatabase()
+) => {
+  const client = await database.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const userFields = ['full_name', 'email', 'phone'].filter((field) =>
+      Object.hasOwn(studentData, field)
+    );
+
+    if (userFields.length > 0) {
+      const assignments = userFields.map(
+        (field, index) => `${field} = $${index + 1}`
+      );
+      const values = userFields.map((field) => studentData[field]);
+
+      values.push(studentId);
+
+      await client.query(
+        `UPDATE users u
+         SET ${assignments.join(', ')},
+             updated_at = CURRENT_TIMESTAMP
+         FROM student_profiles sp
+         WHERE sp.user_id = u.id
+           AND sp.id = $${values.length}
+           AND u.role = 'student'`,
+        values
+      );
+    }
+
+    const profileFields = [
+      'student_number',
+      'course',
+      'year_of_study',
+      'emergency_contact_name',
+      'emergency_contact_phone',
+    ].filter((field) => Object.hasOwn(studentData, field));
+
+    if (profileFields.length > 0) {
+      const assignments = profileFields.map(
+        (field, index) => `${field} = $${index + 1}`
+      );
+      const values = profileFields.map((field) => studentData[field]);
+
+      values.push(studentId);
+
+      await client.query(
+        `UPDATE student_profiles
+         SET ${assignments.join(', ')},
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $${values.length}`,
+        values
+      );
+    }
+
+    const updatedStudent = await findStudentById(studentId, client);
+
+    await client.query('COMMIT');
+    return updatedStudent;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 const updateStudentAccountStatus = async (
   studentId,
   accountStatus,
@@ -220,6 +291,7 @@ module.exports = {
   listStudents,
   countStudents,
   updateStudentProfile,
+  updateStudentAccount,
   updateStudentAccountStatus,
   studentExistsById,
 };

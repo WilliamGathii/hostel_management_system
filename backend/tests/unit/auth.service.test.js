@@ -1,14 +1,10 @@
 jest.mock('../../src/models/user.model', () => ({
-  emailExists: jest.fn(),
-  studentNumberExists: jest.fn(),
-  createStudentAccount: jest.fn(),
   findUserByEmailWithPassword: jest.fn(),
   updateLastLoginAt: jest.fn(),
   findUserWithProfile: jest.fn(),
 }));
 
 jest.mock('../../src/utils/password', () => ({
-  hashPassword: jest.fn(),
   comparePassword: jest.fn(),
 }));
 
@@ -19,7 +15,7 @@ jest.mock('../../src/utils/jwt', () => ({
 const userModel = require('../../src/models/user.model');
 const authService = require('../../src/services/auth.service');
 const { signAuthToken } = require('../../src/utils/jwt');
-const { hashPassword, comparePassword } = require('../../src/utils/password');
+const { comparePassword } = require('../../src/utils/password');
 
 const studentUser = {
   id: 'student-user-id',
@@ -37,66 +33,10 @@ const studentProfile = {
   student_number: 'STU001',
 };
 
-const registrationData = {
-  full_name: ' Student User ',
-  email: ' STUDENT@EXAMPLE.COM ',
-  phone: ' +254700000001 ',
-  password: 'Student123',
-  student_number: ' STU001 ',
-  role: 'admin',
-  account_status: 'suspended',
-};
-
 describe('authentication service', () => {
   beforeEach(() => {
-    userModel.emailExists.mockResolvedValue(false);
-    userModel.studentNumberExists.mockResolvedValue(false);
-    hashPassword.mockResolvedValue('hashed-password');
-    userModel.createStudentAccount.mockResolvedValue({
-      user: studentUser,
-      profile: studentProfile,
-    });
     comparePassword.mockResolvedValue(true);
     userModel.updateLastLoginAt.mockResolvedValue('2026-07-27T12:00:00.000Z');
-  });
-
-  test('registers a Student and ignores submitted role and status fields', async () => {
-    const result = await authService.registerStudent(registrationData);
-    const accountInput = userModel.createStudentAccount.mock.calls[0][0];
-
-    expect(accountInput.user).toMatchObject({
-      email: 'student@example.com',
-      passwordHash: 'hashed-password',
-      role: 'student',
-      accountStatus: 'active',
-    });
-    expect(accountInput.user.role).not.toBe(registrationData.role);
-    expect(result.user.role).toBe('student');
-    expect(result.token).toBe('signed-test-token');
-    expect(result).not.toHaveProperty('password');
-    expect(result).not.toHaveProperty('password_hash');
-  });
-
-  test('rejects a duplicate email', async () => {
-    userModel.emailExists.mockResolvedValue(true);
-
-    await expect(
-      authService.registerStudent(registrationData)
-    ).rejects.toMatchObject({
-      statusCode: 409,
-      message: 'Email is already registered',
-    });
-  });
-
-  test('rejects a duplicate student number', async () => {
-    userModel.studentNumberExists.mockResolvedValue(true);
-
-    await expect(
-      authService.registerStudent(registrationData)
-    ).rejects.toMatchObject({
-      statusCode: 409,
-      message: 'Student number is already registered',
-    });
   });
 
   test('returns a token and safe user details for valid login', async () => {

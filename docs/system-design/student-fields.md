@@ -17,16 +17,16 @@ This matches the database design, where fields named `student_id` reference
 | ------------------------- | ------------------ | ---------------- | -------------- | ---------------- | -------------------- | -------- | ------------------------------------------------ |
 | `id`                      | `student_profiles` | Yes              | Yes            | No               | No                   | Yes      | UUID                                             |
 | `user_id`                 | `student_profiles` | Yes              | Yes            | No               | No                   | Yes      | UUID                                             |
-| `student_number`          | `student_profiles` | Yes              | Yes            | No               | No                   | Yes      | Maximum 50 characters; unique                    |
-| `course`                  | `student_profiles` | Yes              | Yes            | Yes              | No                   | No       | 2 to 150 characters when provided                |
-| `year_of_study`           | `student_profiles` | Yes              | Yes            | Yes              | No                   | No       | Positive integer when provided                   |
-| `emergency_contact_name`  | `student_profiles` | Yes              | Yes            | Yes              | No                   | No       | 2 to 150 characters when provided                |
-| `emergency_contact_phone` | `student_profiles` | Yes              | Yes            | Yes              | No                   | No       | 7 to 30 supported phone characters when provided |
+| `student_number`          | `student_profiles` | Yes              | Yes            | No               | Yes                  | Yes      | Maximum 50 characters; unique                    |
+| `course`                  | `student_profiles` | Yes              | Yes            | Yes              | Yes                  | No       | 2 to 150 characters when provided                |
+| `year_of_study`           | `student_profiles` | Yes              | Yes            | Yes              | Yes                  | No       | Positive integer when provided                   |
+| `emergency_contact_name`  | `student_profiles` | Yes              | Yes            | Yes              | Yes                  | No       | 2 to 150 characters when provided                |
+| `emergency_contact_phone` | `student_profiles` | Yes              | Yes            | Yes              | Yes                  | No       | 7 to 30 supported phone characters when provided |
 | `created_at`              | `student_profiles` | Yes              | Yes            | No               | No                   | Yes      | Database timestamp                               |
 | `updated_at`              | `student_profiles` | Yes              | Yes            | No               | No                   | Yes      | Database timestamp                               |
-| `full_name`               | `users`            | Yes              | Yes            | No               | No                   | Yes      | Read-only in Step 8                              |
-| `email`                   | `users`            | Yes              | Yes            | No               | No                   | Yes      | Read-only authentication email                   |
-| `phone`                   | `users`            | Yes              | Yes            | Yes              | No                   | No       | 7 to 30 supported phone characters when provided |
+| `full_name`               | `users`            | Yes              | Yes            | No               | Yes                  | Yes      | 2 to 150 characters                              |
+| `email`                   | `users`            | Yes              | Yes            | No               | Yes                  | Yes      | Valid lowercase email; unique                    |
+| `phone`                   | `users`            | Yes              | Yes            | Yes              | Yes                  | No       | 7 to 30 supported phone characters when provided |
 | `role`                    | `users`            | Yes              | Yes            | No               | No                   | Yes      | Must remain `student`                            |
 | `account_status`          | `users`            | Yes              | Yes            | No               | Status endpoint only | Yes      | `active`, `suspended`, or `inactive`             |
 | `last_login_at`           | `users`            | Yes              | Yes            | No               | No                   | No       | Database timestamp                               |
@@ -61,8 +61,12 @@ Students cannot update:
 - Created or updated timestamps
 - Last login time
 
-Admins can update only `account_status` during Step 8. Student records are not
-permanently deleted.
+Admins can create Student accounts and edit name, email, phone, Student number,
+and approved profile fields. Admins cannot edit role, existing password
+information, IDs, or timestamps. Account status uses its separate endpoint.
+
+The creation form accepts a temporary password, but the API never returns that
+password or its hash. Student records are not permanently deleted.
 
 ## Database Readiness
 

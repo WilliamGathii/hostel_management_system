@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   LuChevronLeft,
   LuChevronRight,
+  LuPlus,
   LuSearch,
   LuUserRound,
 } from 'react-icons/lu';
@@ -155,6 +156,15 @@ export function AdminStudentListPage() {
   return (
     <PageContainer>
       <PageHeader
+        actions={
+          <Link
+            className="inline-flex min-h-11 items-center gap-2 rounded-card bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            to="/admin/students/new"
+          >
+            <LuPlus aria-hidden="true" className="size-4" />
+            Add Student
+          </Link>
+        }
         description="View and manage registered student accounts."
         title="Student Management"
       />

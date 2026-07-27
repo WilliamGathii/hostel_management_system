@@ -135,7 +135,6 @@ Public frontend routes:
 
 ```text
 /login
-/register
 /forgot-password
 /unauthorized
 ```
@@ -240,14 +239,13 @@ GET /api/v1/health
 Authentication endpoints:
 
 ```text
-POST /api/v1/auth/register
 POST /api/v1/auth/login
 POST /api/v1/auth/logout
 GET  /api/v1/auth/me
 ```
 
-Public registration creates Student accounts only. Admin and staff accounts
-cannot use public registration.
+Public Student registration is disabled. Admins create Student accounts from
+Student Management.
 
 To create the first Admin locally, set these environment variables without
 committing their values:
@@ -263,8 +261,8 @@ npm run create:admin
 Run the authentication table migration before using the setup script. The
 script requires a local development database and refuses to run in production.
 
-The frontend login and Student registration pages use these authentication
-endpoints. Admin and staff accounts cannot use public registration.
+The frontend login page uses these authentication endpoints. Admin and staff
+accounts cannot use public registration.
 
 Rooms, allocations, maintenance, visitors, payments, announcements,
 notifications, reports, and audit-log features have not been developed yet.
@@ -277,7 +275,9 @@ Student API endpoints:
 GET   /api/v1/students/me
 PATCH /api/v1/students/me
 GET   /api/v1/students
+POST  /api/v1/students
 GET   /api/v1/students/:studentId
+PATCH /api/v1/students/:studentId
 PATCH /api/v1/students/:studentId/status
 ```
 
@@ -287,7 +287,8 @@ Student frontend routes:
 | ---------------------------- | ------------- | ------------------------------- |
 | `/student/profile`           | Student       | View and update own profile     |
 | `/admin/students`            | Admin         | Search and list Student records |
-| `/admin/students/:studentId` | Admin         | View details and update status  |
+| `/admin/students/new`        | Admin         | Create a Student account        |
+| `/admin/students/:studentId` | Admin         | View and edit Student details   |
 
 Run Student backend tests as part of the backend suite:
 

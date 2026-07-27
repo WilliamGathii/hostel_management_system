@@ -1,11 +1,11 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { LoginPage } from '../features/authentication/pages/LoginPage';
-import { RegisterPage } from '../features/authentication/pages/RegisterPage';
 import { AdminDashboardPage } from '../features/dashboard/pages/AdminDashboardPage';
 import { MaintenanceDashboardPage } from '../features/dashboard/pages/MaintenanceDashboardPage';
 import { SecurityDashboardPage } from '../features/dashboard/pages/SecurityDashboardPage';
 import { StudentDashboardPage } from '../features/dashboard/pages/StudentDashboardPage';
+import { AdminStudentCreatePage } from '../features/students/pages/AdminStudentCreatePage';
 import { AdminStudentDetailPage } from '../features/students/pages/AdminStudentDetailPage';
 import { AdminStudentListPage } from '../features/students/pages/AdminStudentListPage';
 import { StudentProfilePage } from '../features/students/pages/StudentProfilePage';
@@ -31,7 +31,6 @@ export function AppRouter() {
       <Route element={<PublicOnlyRoute />}>
         <Route element={<AuthLayout />}>
           <Route element={<LoginPage />} path="/login" />
-          <Route element={<RegisterPage />} path="/register" />
           <Route element={<ForgotPasswordPage />} path="/forgot-password" />
         </Route>
       </Route>
@@ -105,6 +104,10 @@ export function AppRouter() {
           <Route element={<RoleRoute allowedRoles={['admin']} />}>
             <Route element={<AdminDashboardPage />} path="/admin/dashboard" />
             <Route element={<AdminStudentListPage />} path="/admin/students" />
+            <Route
+              element={<AdminStudentCreatePage />}
+              path="/admin/students/new"
+            />
             <Route
               element={<AdminStudentDetailPage />}
               path="/admin/students/:studentId"

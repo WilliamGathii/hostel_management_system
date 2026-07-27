@@ -30,6 +30,16 @@ export const getStudentById = async (studentId) => {
   return getResponseData(response).student || null;
 };
 
+export const createStudent = async (studentData) => {
+  const response = await apiClient.post('/students', studentData);
+  return getResponseData(response).student || null;
+};
+
+export const updateStudent = async (studentId, studentData) => {
+  const response = await apiClient.patch(`/students/${studentId}`, studentData);
+  return getResponseData(response).student || null;
+};
+
 export const updateStudentStatus = async (studentId, accountStatus) => {
   const response = await apiClient.patch(`/students/${studentId}/status`, {
     account_status: accountStatus,

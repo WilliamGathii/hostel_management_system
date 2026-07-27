@@ -10,7 +10,6 @@ export const createAuthValue = (overrides = {}) => ({
   isLoading: false,
   authError: null,
   login: vi.fn(),
-  registerStudent: vi.fn(),
   logout: vi.fn(),
   refreshUser: vi.fn(),
   ...overrides,

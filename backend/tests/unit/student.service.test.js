@@ -4,12 +4,25 @@ jest.mock('../../src/models/student.model', () => ({
   listStudents: jest.fn(),
   countStudents: jest.fn(),
   updateStudentProfile: jest.fn(),
+  updateStudentAccount: jest.fn(),
   updateStudentAccountStatus: jest.fn(),
   studentExistsById: jest.fn(),
 }));
 
+jest.mock('../../src/models/user.model', () => ({
+  emailExists: jest.fn(),
+  studentNumberExists: jest.fn(),
+  createStudentAccount: jest.fn(),
+}));
+
+jest.mock('../../src/utils/password', () => ({
+  hashPassword: jest.fn(),
+}));
+
 const studentModel = require('../../src/models/student.model');
+const userModel = require('../../src/models/user.model');
 const studentService = require('../../src/services/student.service');
+const { hashPassword } = require('../../src/utils/password');
 
 const studentUser = {
   id: 'student-user-id',
@@ -40,6 +53,9 @@ const sampleStudent = {
 describe('student service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    userModel.emailExists.mockResolvedValue(false);
+    userModel.studentNumberExists.mockResolvedValue(false);
+    hashPassword.mockResolvedValue('hashed-password');
   });
 
   test('returns the authenticated Student profile safely', async () => {
@@ -159,6 +175,113 @@ describe('student service', () => {
     ).rejects.toMatchObject({
       statusCode: 404,
     });
+  });
+
+  test('allows an Admin to create an active Student account', async () => {
+    userModel.createStudentAccount.mockResolvedValue({
+      user: { id: studentUser.id },
+      profile: { id: sampleStudent.id },
+    });
+    studentModel.findStudentById.mockResolvedValue(sampleStudent);
+
+    const result = await studentService.createStudent(adminUser, {
+      full_name: ' Student User ',
+      email: ' STUDENT@EXAMPLE.COM ',
+      phone: ' +254700000001 ',
+      student_number: ' STU001 ',
+      course: ' Software Engineering ',
+      year_of_study: 2,
+      emergency_contact_name: '',
+      emergency_contact_phone: '',
+      password: 'Student123',
+      role: 'admin',
+      account_status: 'suspended',
+    });
+
+    expect(hashPassword).toHaveBeenCalledWith('Student123');
+    expect(userModel.createStudentAccount).toHaveBeenCalledWith({
+      user: {
+        fullName: 'Student User',
+        email: 'student@example.com',
+        phone: '+254700000001',
+        passwordHash: 'hashed-password',
+        role: 'student',
+        accountStatus: 'active',
+      },
+      profile: {
+        studentNumber: 'STU001',
+        course: 'Software Engineering',
+        yearOfStudy: 2,
+        emergencyContactName: null,
+        emergencyContactPhone: null,
+      },
+    });
+    expect(result).not.toHaveProperty('password_hash');
+  });
+
+  test('rejects non-Admin Student creation', async () => {
+    await expect(
+      studentService.createStudent(studentUser, {
+        email: 'student@example.com',
+      })
+    ).rejects.toMatchObject({ statusCode: 403 });
+    expect(userModel.createStudentAccount).not.toHaveBeenCalled();
+  });
+
+  test('rejects a duplicate email during Student creation', async () => {
+    userModel.emailExists.mockResolvedValue(true);
+
+    await expect(
+      studentService.createStudent(adminUser, {
+        full_name: 'Student User',
+        email: 'student@example.com',
+        student_number: 'STU001',
+        password: 'Student123',
+      })
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      message: 'Email is already registered',
+    });
+  });
+
+  test('allows an Admin to edit approved Student fields', async () => {
+    studentModel.findStudentById.mockResolvedValue(sampleStudent);
+    studentModel.updateStudentAccount.mockResolvedValue({
+      ...sampleStudent,
+      full_name: 'Updated Student',
+      phone: null,
+    });
+
+    const result = await studentService.updateStudent(
+      adminUser,
+      sampleStudent.id,
+      {
+        full_name: ' Updated Student ',
+        phone: '',
+        role: 'admin',
+        account_status: 'suspended',
+        password: 'Unsupported123',
+      }
+    );
+
+    expect(studentModel.updateStudentAccount).toHaveBeenCalledWith(
+      sampleStudent.id,
+      {
+        full_name: 'Updated Student',
+        phone: null,
+      }
+    );
+    expect(result.full_name).toBe('Updated Student');
+    expect(result).not.toHaveProperty('password_hash');
+  });
+
+  test('rejects non-Admin Student edits', async () => {
+    await expect(
+      studentService.updateStudent(studentUser, sampleStudent.id, {
+        full_name: 'Updated Student',
+      })
+    ).rejects.toMatchObject({ statusCode: 403 });
+    expect(studentModel.updateStudentAccount).not.toHaveBeenCalled();
   });
 
   test.each(['active', 'suspended', 'inactive'])(

@@ -2,8 +2,8 @@
 
 ## 1. Student-Management Overview
 
-Step 8 adds Student Profile and Admin Student Management. It uses the existing
-`users` and `student_profiles` tables from the authentication migration.
+Step 8 adds Student Profile and Admin Student Management. Admins create and
+edit Student accounts. Public Student registration is not available.
 
 The approved Student identifier in API paths is `student_profiles.id`.
 
@@ -48,7 +48,12 @@ Password hashes are never returned through the Student API.
 The Admin Student list is available at `/admin/students`.
 
 It shows safe account information, account status, registration date, and a
-link to each Student detail page. Student deletion is not available.
+link to each Student detail page. It also provides an Add Student action.
+Student deletion is not available.
+
+Admins create Student accounts with a name, email, Student number, temporary
+password, and optional profile fields. New accounts always use the Student role
+and active status.
 
 ## 6. Search
 
@@ -83,11 +88,13 @@ Previous and Next actions are disabled when the related page is unavailable.
 
 ## 9. Student Detail Page
 
-The Admin Student detail page is available at
-`/admin/students/:studentId`.
+The Admin Student detail page is available at `/admin/students/:studentId`.
 
 It displays only information returned by the API. It does not invent room,
 maintenance, visitor, or payment records.
+
+Admins can edit approved identity, contact, and profile fields. Role, account
+status, password information, IDs, and timestamps remain protected.
 
 ## 10. Account-Status Management
 
@@ -101,8 +108,8 @@ deleted in this version.
 
 Students can view and update only their own approved profile fields.
 
-Admins can list Student records, view a Student record, and update Student
-account status.
+Admins can create, list, view, and edit Student records. They can also update
+Student account status.
 
 Maintenance Staff and Security Staff cannot use Student-management endpoints
 or pages.
@@ -114,7 +121,9 @@ or pages.
 | `GET`   | `/api/v1/students/me`                | Student | View own profile               |
 | `PATCH` | `/api/v1/students/me`                | Student | Update approved profile fields |
 | `GET`   | `/api/v1/students`                   | Admin   | Search and list students       |
+| `POST`  | `/api/v1/students`                   | Admin   | Create a Student account       |
 | `GET`   | `/api/v1/students/:studentId`        | Admin   | View one Student record        |
+| `PATCH` | `/api/v1/students/:studentId`        | Admin   | Edit approved Student fields   |
 | `PATCH` | `/api/v1/students/:studentId/status` | Admin   | Update account status          |
 
 ## 13. Validation
@@ -162,7 +171,7 @@ Backend unit and integration tests cover:
 - Missing records
 - Wrong-role access
 
-The complete backend suite contains 87 passing tests across 9 test suites.
+The complete backend suite contains 100 passing tests across 9 test suites.
 
 ## 17. Frontend Tests
 
@@ -179,22 +188,30 @@ Frontend tests cover:
 - Role-protected routes
 - Future module placeholders
 
-The complete frontend suite contains 66 passing tests across 14 test files.
+The complete frontend suite contains 65 passing tests across 13 test files.
 
 ## 18. Live Testing Status
 
-Live database testing was skipped because no local `DATABASE_URL`,
-`TEST_DATABASE_URL`, or backend `.env` was available.
+Live local database testing was completed with temporary test data.
 
-No credentials were guessed. Mocked backend and frontend tests were used.
+The checks confirmed:
+
+- Public Student registration returns `404`.
+- Unauthenticated Student creation returns `401`.
+- Admin login succeeds.
+- Admin Student creation returns `201`.
+- New accounts use the Student role and active status.
+- Password fields are not returned.
+- The created Student can log in.
+- Admin Student editing succeeds.
+- Temporary test data is removed after the check.
 
 ## 19. Current Limitations
 
 - Student full name and email are read-only.
-- Admins cannot edit Student profile details.
 - Student records cannot be permanently deleted.
 - Profile-image upload is not included.
-- Live database flow testing is not complete.
+- Password reset is not included.
 
 ## 20. Features Planned for Later
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { LuArrowLeft, LuShieldCheck } from 'react-icons/lu';
-import { Link, useParams } from 'react-router-dom';
+import { LuArrowLeft, LuPencil, LuShieldCheck } from 'react-icons/lu';
+import { Link, useLocation, useParams } from 'react-router-dom';
 
 import { Button } from '../../../components/common/Button';
 import { Card } from '../../../components/common/Card';
@@ -10,8 +10,10 @@ import { StatusChip } from '../../../components/common/StatusChip';
 import { Alert } from '../../../components/feedback/Alert';
 import { ErrorState } from '../../../components/feedback/ErrorState';
 import { LoadingSpinner } from '../../../components/feedback/LoadingSpinner';
+import { StudentAccountForm } from '../components/StudentAccountForm';
 import {
   getStudentById,
+  updateStudent,
   updateStudentStatus,
 } from '../services/student.service';
 
@@ -78,13 +80,17 @@ function DetailItem({ label, children }) {
 
 export function AdminStudentDetailPage() {
   const { studentId } = useParams();
+  const location = useLocation();
   const [student, setStudent] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [isEditingAccount, setIsEditingAccount] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(
+    location.state?.notice || ''
+  );
   const [statusError, setStatusError] = useState('');
 
   const loadStudent = useCallback(async () => {
@@ -122,6 +128,19 @@ export function AdminStudentDetailPage() {
     }
 
     setIsConfirming(true);
+  };
+
+  const submitStudentUpdate = async (studentData) => {
+    const updatedStudent = await updateStudent(student.id, studentData);
+
+    if (!updatedStudent) {
+      throw new Error('The updated Student account could not be loaded.');
+    }
+
+    setStudent(updatedStudent);
+    setSelectedStatus(updatedStudent.account_status);
+    setSuccessMessage('Student account updated successfully.');
+    setIsEditingAccount(false);
   };
 
   const cancelStatusChange = () => {
@@ -199,13 +218,28 @@ export function AdminStudentDetailPage() {
     <PageContainer>
       <PageHeader
         actions={
-          <Link
-            className="inline-flex min-h-11 items-center gap-2 rounded-card border border-border bg-card px-4 py-2.5 text-sm font-semibold text-text hover:bg-page focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-            to="/admin/students"
-          >
-            <LuArrowLeft aria-hidden="true" className="size-4" />
-            Back to students
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            {!isEditingAccount ? (
+              <Button
+                onClick={() => {
+                  setSuccessMessage('');
+                  setStatusError('');
+                  setIsConfirming(false);
+                  setIsEditingAccount(true);
+                }}
+              >
+                <LuPencil aria-hidden="true" className="size-4" />
+                Edit account
+              </Button>
+            ) : null}
+            <Link
+              className="inline-flex min-h-11 items-center gap-2 rounded-card border border-border bg-card px-4 py-2.5 text-sm font-semibold text-text hover:bg-page focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              to="/admin/students"
+            >
+              <LuArrowLeft aria-hidden="true" className="size-4" />
+              Back to students
+            </Link>
+          </div>
         }
         description="Review safe account information and manage account status."
         title="Student Details"
@@ -216,44 +250,68 @@ export function AdminStudentDetailPage() {
           <Alert variant="success">{successMessage}</Alert>
         ) : null}
 
-        <Card>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
+        {isEditingAccount ? (
+          <Card>
+            <div className="mb-6">
               <h2 className="text-lg font-bold text-text">
-                {displayValue(student.full_name)}
+                Edit Student information
               </h2>
               <p className="mt-1 text-sm text-muted">
-                {displayValue(student.student_number)}
+                Role, status, password, and account dates cannot be changed
+                here.
               </p>
             </div>
-            <StatusChip variant={statusVariant[student.account_status]}>
-              {formatStatus(student.account_status)}
-            </StatusChip>
-          </div>
+            <StudentAccountForm
+              initialValues={student}
+              onCancel={() => setIsEditingAccount(false)}
+              onSubmit={submitStudentUpdate}
+              submitLabel="Save changes"
+            />
+          </Card>
+        ) : (
+          <Card>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-text">
+                  {displayValue(student.full_name)}
+                </h2>
+                <p className="mt-1 text-sm text-muted">
+                  {displayValue(student.student_number)}
+                </p>
+              </div>
+              <StatusChip variant={statusVariant[student.account_status]}>
+                {formatStatus(student.account_status)}
+              </StatusChip>
+            </div>
 
-          <dl className="mt-7 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-            <DetailItem label="Email">{displayValue(student.email)}</DetailItem>
-            <DetailItem label="Phone">{displayValue(student.phone)}</DetailItem>
-            <DetailItem label="Course">
-              {displayValue(student.course)}
-            </DetailItem>
-            <DetailItem label="Year of study">
-              {displayValue(student.year_of_study)}
-            </DetailItem>
-            <DetailItem label="Emergency contact">
-              {displayValue(student.emergency_contact_name)}
-            </DetailItem>
-            <DetailItem label="Emergency phone">
-              {displayValue(student.emergency_contact_phone)}
-            </DetailItem>
-            <DetailItem label="Registered">
-              {formatDate(student.account_created_at)}
-            </DetailItem>
-            <DetailItem label="Last login">
-              {formatDate(student.last_login_at, true)}
-            </DetailItem>
-          </dl>
-        </Card>
+            <dl className="mt-7 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+              <DetailItem label="Email">
+                {displayValue(student.email)}
+              </DetailItem>
+              <DetailItem label="Phone">
+                {displayValue(student.phone)}
+              </DetailItem>
+              <DetailItem label="Course">
+                {displayValue(student.course)}
+              </DetailItem>
+              <DetailItem label="Year of study">
+                {displayValue(student.year_of_study)}
+              </DetailItem>
+              <DetailItem label="Emergency contact">
+                {displayValue(student.emergency_contact_name)}
+              </DetailItem>
+              <DetailItem label="Emergency phone">
+                {displayValue(student.emergency_contact_phone)}
+              </DetailItem>
+              <DetailItem label="Registered">
+                {formatDate(student.account_created_at)}
+              </DetailItem>
+              <DetailItem label="Last login">
+                {formatDate(student.last_login_at, true)}
+              </DetailItem>
+            </dl>
+          </Card>
+        )}
 
         <Card>
           <div className="flex items-start gap-3">

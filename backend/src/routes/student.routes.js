@@ -4,6 +4,8 @@ const studentController = require('../controllers/student.controller');
 const authenticate = require('../middleware/authenticate');
 const { authorizeRoles } = require('../middleware/authorize');
 const {
+  studentCreateValidation,
+  studentAdminUpdateValidation,
   studentProfileUpdateValidation,
   studentListValidation,
   studentIdentifierValidation,
@@ -35,6 +37,14 @@ router.get(
   handleStudentValidation,
   studentController.listStudents
 );
+router.post(
+  '/',
+  authenticate,
+  authorizeRoles('admin'),
+  studentCreateValidation,
+  handleStudentValidation,
+  studentController.createStudent
+);
 router.get(
   '/:studentId',
   authenticate,
@@ -42,6 +52,15 @@ router.get(
   studentIdentifierValidation,
   handleStudentValidation,
   studentController.getStudent
+);
+router.patch(
+  '/:studentId',
+  authenticate,
+  authorizeRoles('admin'),
+  studentIdentifierValidation,
+  studentAdminUpdateValidation,
+  handleStudentValidation,
+  studentController.updateStudent
 );
 router.patch(
   '/:studentId/status',

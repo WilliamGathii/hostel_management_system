@@ -2,9 +2,11 @@ import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 vi.mock('../features/students/services/student.service', () => ({
+  createStudent: vi.fn(),
   getMyStudentProfile: vi.fn(),
   getStudentById: vi.fn(),
   getStudents: vi.fn(),
+  updateStudent: vi.fn(),
   updateMyStudentProfile: vi.fn(),
   updateStudentStatus: vi.fn(),
 }));
@@ -50,6 +52,16 @@ describe('Student feature routing', () => {
     });
   });
 
+  test('does not expose public Student registration', () => {
+    renderWithAuth(<AppRouter />, {
+      route: '/register',
+    });
+
+    expect(
+      screen.getByRole('heading', { name: 'We could not find that page' })
+    ).toBeInTheDocument();
+  });
+
   test('allows a Student to open their profile', async () => {
     renderWithAuth(<AppRouter />, {
       authValue: authenticatedUser('student'),
@@ -91,6 +103,27 @@ describe('Student feature routing', () => {
 
     expect(
       await screen.findByRole('heading', { name: 'Student Details' })
+    ).toBeInTheDocument();
+  });
+
+  test('allows only an Admin to open Student creation', () => {
+    const adminView = renderWithAuth(<AppRouter />, {
+      authValue: authenticatedUser('admin'),
+      route: '/admin/students/new',
+    });
+
+    expect(
+      screen.getByRole('heading', { name: 'Add Student' })
+    ).toBeInTheDocument();
+    adminView.unmount();
+
+    renderWithAuth(<AppRouter />, {
+      authValue: authenticatedUser('student'),
+      route: '/admin/students/new',
+    });
+
+    expect(
+      screen.getByRole('heading', { name: 'Access unavailable' })
     ).toBeInTheDocument();
   });
 

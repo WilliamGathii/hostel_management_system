@@ -17,7 +17,6 @@ import {
   getCurrentUser,
   login,
   logout,
-  registerStudent,
 } from '../features/authentication/services/auth.service';
 import { removeAccessToken, saveAccessToken } from '../utils/token-storage';
 
@@ -25,42 +24,6 @@ describe('frontend authentication service', () => {
   beforeEach(() => {
     apiClient.get.mockReset();
     apiClient.post.mockReset();
-  });
-
-  test('registration sends only backend-approved fields', async () => {
-    apiClient.post.mockResolvedValue({
-      data: {
-        token: 'registration-token',
-        user: { role: 'student' },
-      },
-    });
-
-    await registerStudent({
-      full_name: 'Student User',
-      email: 'student@example.com',
-      phone: '+254700000001',
-      password: 'Student123',
-      student_number: 'STU001',
-      confirm_password: 'Student123',
-      role: 'admin',
-      account_status: 'suspended',
-    });
-
-    expect(apiClient.post).toHaveBeenCalledWith(
-      '/auth/register',
-      expect.objectContaining({
-        full_name: 'Student User',
-        student_number: 'STU001',
-      })
-    );
-    expect(apiClient.post.mock.calls[0][1]).not.toHaveProperty('role');
-    expect(apiClient.post.mock.calls[0][1]).not.toHaveProperty(
-      'account_status'
-    );
-    expect(apiClient.post.mock.calls[0][1]).not.toHaveProperty(
-      'confirm_password'
-    );
-    expect(saveAccessToken).toHaveBeenCalledWith('registration-token');
   });
 
   test('login saves the token after a successful response', async () => {

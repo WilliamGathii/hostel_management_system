@@ -1,5 +1,7 @@
 const studentModel = require('../models/student.model');
+const userModel = require('../models/user.model');
 const AppError = require('../utils/app-error');
+const { hashPassword } = require('../utils/password');
 
 const STUDENT_ROLE = 'student';
 const ADMIN_ROLE = 'admin';
@@ -10,6 +12,13 @@ const EDITABLE_PROFILE_FIELDS = [
   'year_of_study',
   'emergency_contact_name',
   'emergency_contact_phone',
+];
+const ADMIN_EDITABLE_STUDENT_FIELDS = [
+  'full_name',
+  'email',
+  'phone',
+  'student_number',
+  ...EDITABLE_PROFILE_FIELDS.filter((field) => field !== 'phone'),
 ];
 const SAFE_STUDENT_FIELDS = [
   'id',
@@ -65,6 +74,59 @@ const normalizeProfileUpdate = (profileData) => {
   });
 
   return normalizedData;
+};
+
+const normalizeAdminStudentData = (studentData) => {
+  const normalizedData = {};
+
+  ADMIN_EDITABLE_STUDENT_FIELDS.forEach((field) => {
+    if (!Object.hasOwn(studentData, field)) {
+      return;
+    }
+
+    if (field === 'year_of_study') {
+      normalizedData[field] = studentData[field] || null;
+      return;
+    }
+
+    if (field === 'email') {
+      normalizedData[field] = studentData[field].trim().toLowerCase();
+      return;
+    }
+
+    if (field === 'full_name' || field === 'student_number') {
+      normalizedData[field] = studentData[field].trim();
+      return;
+    }
+
+    normalizedData[field] = normalizeOptionalText(studentData[field]);
+  });
+
+  return normalizedData;
+};
+
+const getDuplicateMessage = (error) => {
+  if (error.constraint === 'users_email_key') {
+    return 'Email is already registered';
+  }
+
+  if (error.constraint === 'student_profiles_student_number_key') {
+    return 'Student number is already registered';
+  }
+
+  return 'Student account details already exist';
+};
+
+const runWithDuplicateHandling = async (operation) => {
+  try {
+    return await operation();
+  } catch (error) {
+    if (error.code === '23505') {
+      throw new AppError(getDuplicateMessage(error), 409);
+    }
+
+    throw error;
+  }
 };
 
 const toSafeStudent = (student) =>
@@ -145,6 +207,86 @@ const getStudentById = async (user, studentId) => {
   return toSafeStudent(student);
 };
 
+const createStudent = async (user, studentData) => {
+  requireRole(user, ADMIN_ROLE);
+
+  const normalizedData = normalizeAdminStudentData(studentData);
+
+  if (await userModel.emailExists(normalizedData.email)) {
+    throw new AppError('Email is already registered', 409);
+  }
+
+  if (await userModel.studentNumberExists(normalizedData.student_number)) {
+    throw new AppError('Student number is already registered', 409);
+  }
+
+  const passwordHash = await hashPassword(studentData.password);
+  const account = await runWithDuplicateHandling(() =>
+    userModel.createStudentAccount({
+      user: {
+        fullName: normalizedData.full_name,
+        email: normalizedData.email,
+        phone: normalizedData.phone,
+        passwordHash,
+        role: STUDENT_ROLE,
+        accountStatus: 'active',
+      },
+      profile: {
+        studentNumber: normalizedData.student_number,
+        course: normalizedData.course,
+        yearOfStudy: normalizedData.year_of_study,
+        emergencyContactName: normalizedData.emergency_contact_name,
+        emergencyContactPhone: normalizedData.emergency_contact_phone,
+      },
+    })
+  );
+  const student = await studentModel.findStudentById(account.profile.id);
+
+  if (!student) {
+    throw new AppError('Student account could not be loaded', 500);
+  }
+
+  return toSafeStudent(student);
+};
+
+const updateStudent = async (user, studentId, studentData) => {
+  requireRole(user, ADMIN_ROLE);
+
+  const existingStudent = await studentModel.findStudentById(studentId);
+
+  if (!existingStudent) {
+    throw new AppError('Student was not found', 404);
+  }
+
+  const normalizedData = normalizeAdminStudentData(studentData);
+
+  if (
+    normalizedData.email &&
+    normalizedData.email !== existingStudent.email &&
+    (await userModel.emailExists(normalizedData.email))
+  ) {
+    throw new AppError('Email is already registered', 409);
+  }
+
+  if (
+    normalizedData.student_number &&
+    normalizedData.student_number !== existingStudent.student_number &&
+    (await userModel.studentNumberExists(normalizedData.student_number))
+  ) {
+    throw new AppError('Student number is already registered', 409);
+  }
+
+  const updatedStudent = await runWithDuplicateHandling(() =>
+    studentModel.updateStudentAccount(studentId, normalizedData)
+  );
+
+  if (!updatedStudent) {
+    throw new AppError('Student was not found', 404);
+  }
+
+  return toSafeStudent(updatedStudent);
+};
+
 const updateStudentAccountStatus = async (user, studentId, accountStatus) => {
   requireRole(user, ADMIN_ROLE);
 
@@ -181,5 +323,7 @@ module.exports = {
   updateMyStudentProfile,
   listStudents,
   getStudentById,
+  createStudent,
+  updateStudent,
   updateStudentAccountStatus,
 };
