@@ -1,7 +1,6 @@
-import { Card } from '../../../components/common/Card';
 import { PageContainer } from '../../../components/common/PageContainer';
 import { ErrorState } from '../../../components/feedback/ErrorState';
-import { LoadingSpinner } from '../../../components/feedback/LoadingSpinner';
+import { PanelSkeleton } from '../../../components/feedback/Skeleton';
 
 export function DashboardPageState({
   isLoading,
@@ -11,10 +10,12 @@ export function DashboardPageState({
 }) {
   if (isLoading) {
     return (
-      <PageContainer>
-        <Card className="grid min-h-72 place-items-center">
-          <LoadingSpinner label="Loading dashboard" />
-        </Card>
+      <PageContainer className="space-y-5">
+        <PanelSkeleton label="Loading dashboard" />
+        <div className="grid gap-5 lg:grid-cols-2">
+          <PanelSkeleton label="Loading dashboard section" />
+          <PanelSkeleton label="Loading dashboard section" />
+        </div>
       </PageContainer>
     );
   }
@@ -22,12 +23,12 @@ export function DashboardPageState({
   if (!user || hasError) {
     return (
       <PageContainer>
-        <Card>
+        <div className="rounded-card bg-card shadow-card">
           <ErrorState
             description="We could not load your account information. Please sign in again."
             title="Dashboard information is unavailable"
           />
-        </Card>
+        </div>
       </PageContainer>
     );
   }

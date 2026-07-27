@@ -4,15 +4,13 @@ import { Link } from 'react-router-dom';
 export function QuickActionCard({ title, description, path, Icon }) {
   return (
     <Link
-      className="group flex min-h-32 items-start gap-4 rounded-card border border-border bg-card p-4 shadow-card transition hover:border-primary/30 hover:bg-primary-soft/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      className="group flex min-h-24 items-start gap-3 rounded-card bg-card p-4 shadow-card hover:bg-periwinkle-light/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       to={path}
     >
-      <span className="grid size-10 shrink-0 place-items-center rounded-card bg-primary-soft text-primary">
-        <Icon aria-hidden="true" className="size-5" />
-      </span>
+      <Icon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-primary" />
       <span className="min-w-0 flex-1">
         <span className="block font-semibold text-text">{title}</span>
-        <span className="mt-1 block text-sm leading-5 text-muted">
+        <span className="mt-1 block text-xs leading-5 text-muted">
           {description}
         </span>
       </span>

@@ -19,7 +19,7 @@ export const FormField = forwardRef(function FormField(
       <input
         aria-describedby={errorId || hintId}
         aria-invalid={Boolean(error)}
-        className="min-h-11 w-full rounded-card border border-border bg-card px-3.5 py-2.5 text-sm text-text outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary-soft disabled:bg-page"
+        className="min-h-11 w-full rounded-card border border-border bg-card px-3.5 py-2.5 text-sm text-text outline-none placeholder:text-muted/70 hover:border-periwinkle focus:border-primary focus:ring-3 focus:ring-primary-soft disabled:bg-page disabled:text-muted"
         id={name}
         name={name}
         ref={ref}

@@ -7,19 +7,19 @@ import {
 
 const variants = {
   success: {
-    className: 'border-success/20 bg-success-soft text-success',
+    className: 'bg-success-soft text-success',
     Icon: LuCircleCheck,
   },
   error: {
-    className: 'border-error/20 bg-error-soft text-error',
+    className: 'bg-error-soft text-error',
     Icon: LuCircleAlert,
   },
   warning: {
-    className: 'border-warning/20 bg-warning-soft text-warning',
+    className: 'bg-warning-soft text-warning',
     Icon: LuTriangleAlert,
   },
   information: {
-    className: 'border-information/20 bg-information-soft text-information',
+    className: 'bg-information-soft text-information',
     Icon: LuInfo,
   },
 };
@@ -29,7 +29,7 @@ export function Alert({ children, variant = 'information' }) {
 
   return (
     <div
-      className={`flex items-start gap-3 rounded-card border px-4 py-3 text-sm ${className}`}
+      className={`flex items-start gap-3 rounded-card px-4 py-3 text-sm leading-6 ${className}`}
       role={variant === 'error' ? 'alert' : 'status'}
     >
       <Icon className="mt-0.5 size-5 shrink-0" aria-hidden="true" />

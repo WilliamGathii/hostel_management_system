@@ -1,7 +1,3 @@
-import { LuCalendarDays } from 'react-icons/lu';
-
-import { StatusChip } from '../../../components/common/StatusChip';
-
 const formatCurrentDate = () =>
   new Intl.DateTimeFormat(undefined, {
     dateStyle: 'long',
@@ -15,20 +11,17 @@ export function DashboardWelcome({
   dateLabel = formatCurrentDate(),
 }) {
   return (
-    <section className="overflow-hidden rounded-card bg-primary px-5 py-6 text-white shadow-card sm:px-7">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <StatusChip variant="information">{roleLabel}</StatusChip>
-          <h1 className="mt-4 text-2xl font-bold sm:text-3xl">{title}</h1>
-          <p className="mt-2 max-w-2xl text-sm text-blue-100">
-            {name ? `Welcome, ${name}. ${message}` : message}
-          </p>
-        </div>
-        <p className="flex shrink-0 items-center gap-2 text-sm text-blue-100">
-          <LuCalendarDays aria-hidden="true" className="size-4" />
-          {dateLabel}
+    <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-information">{roleLabel}</p>
+        <h1 className="mt-1 text-2xl font-bold text-text sm:text-[1.75rem]">
+          {title}
+        </h1>
+        <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted">
+          {name ? `Welcome, ${name}. ${message}` : message}
         </p>
       </div>
-    </section>
+      <p className="shrink-0 text-sm font-medium text-muted">{dateLabel}</p>
+    </header>
   );
 }
