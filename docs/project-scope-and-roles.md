@@ -16,8 +16,26 @@ The first version will include these visible system areas:
 6. Visitor registration, visitor approval, and security entry verification.
 7. Announcements and notifications.
 8. Simulated or placeholder payment workflow.
-9. Reports for hostel management and administrators.
+9. Reports for hostel management and admins.
 10. Testing, Docker preparation, CI/CD preparation, deployment planning, monitoring, and backups.
+
+## Confirmed Room Allocation Scope
+
+Room allocation will be controlled by the Admin.
+
+Students will not book rooms or allocate rooms to themselves. Students can only:
+
+1. View their current room allocation.
+2. View basic room information related to their allocation.
+3. Receive room allocation notifications.
+
+The Admin will:
+
+1. View available rooms.
+2. Allocate students to rooms.
+3. Change room allocations.
+4. End room allocations.
+5. Check room capacity and occupancy.
 
 ## Payment Scope
 
@@ -35,6 +53,38 @@ The placeholder payment module may include:
 8. Payment reports.
 
 The first version must not connect to M-Pesa, Stripe, PayPal, banks, cards, or any external payment provider.
+
+The Admin will manage simulated payment records. A separate Finance or Accounts role will not be created in this version.
+
+## Required Reports
+
+The first version will include these reports:
+
+1. Room availability report.
+2. Room occupancy report.
+3. Room allocation report.
+4. Student report.
+5. Maintenance request report.
+6. Visitor report.
+7. Simulated payment report.
+8. General dashboard statistics.
+
+Reports should support simple filters such as date, status, room, student, and assigned staff where relevant.
+
+## Visitor Entry Verification Scope
+
+Visitor entry verification is required in the first version.
+
+The visitor process will be:
+
+1. A student registers a visitor.
+2. An Admin approves or rejects the visitor.
+3. Security Staff can view approved visitors.
+4. Security Staff verifies the visitor when they enter.
+5. Security Staff records the visitor entry time.
+6. Security Staff records the visitor exit time.
+
+Security Staff cannot approve or reject visitors.
 
 ## Out of Scope for the First Version
 
@@ -56,9 +106,13 @@ The first version will use four main system roles.
 | Role | Main Purpose |
 | --- | --- |
 | Student | Uses the system to manage hostel-related personal tasks. |
-| Administrator | Manages hostel records, allocations, approvals, announcements, and reports. |
+| Admin | Manages hostel records, allocations, approvals, announcements, payments, and reports. |
 | Maintenance Staff | Views assigned maintenance work and updates request progress. |
-| Security Staff | Checks visitor approval status and records entry verification where enabled. |
+| Security Staff | Checks visitor approval status and records visitor entry verification. |
+
+No separate Warden role will be created. Any administrative hostel duties that could normally be handled by a Warden will be handled by the Admin in this version.
+
+No separate Finance or Accounts role will be created. The Admin will manage simulated payment records.
 
 ## Role Responsibilities
 
@@ -66,9 +120,9 @@ The first version will use four main system roles.
 
 Students will be able to use approved student-facing features such as registration, login, profile viewing or updates, room allocation viewing, maintenance request submission and tracking, visitor registration, announcements, notifications, and placeholder payment history where enabled.
 
-### Administrator
+### Admin
 
-Administrators will manage hostel operations such as student records, room records, room allocation, maintenance oversight, visitor approval, announcements, reports, user roles, and placeholder payment records where enabled.
+Admins will manage hostel operations such as student records, room records, room allocation, maintenance oversight, visitor approval, announcements, reports, user roles, and placeholder payment records where enabled.
 
 ### Maintenance Staff
 
@@ -76,14 +130,4 @@ Maintenance staff will view assigned maintenance requests, update request status
 
 ### Security Staff
 
-Security staff will search visitor requests, check approval status, and record visitor entry verification where enabled. They should not manage student records, room allocations, maintenance assignments, payments, or announcements.
-
-## Scope Questions to Confirm Before Design
-
-These questions should be answered before Step 3 starts:
-
-1. Should students only view allocated rooms, or should they request or book rooms directly?
-2. Should the Warden be a separate role, or should warden duties be handled by Administrator, Maintenance Staff, and Security Staff?
-3. Should finance or accounts staff be a separate role, or should payment records be managed by Administrators?
-4. Which reports are required for the first version?
-5. Should visitor entry verification be recorded as a required feature or an optional feature?
+Security staff will search visitor requests, check approval status, view approved visitors, record visitor entry time, and record visitor exit time. They should not manage student records, room allocations, maintenance assignments, payments, announcements, or visitor approval decisions.
