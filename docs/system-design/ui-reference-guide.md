@@ -317,7 +317,7 @@ Packages that may be needed later if the team chooses to follow the reference cl
 
 - `tailwindcss`
 - `@tailwindcss/vite`
-- `react-icons` or another approved icon library
+- `react-icons`
 
 No packages are installed in this review step.
 
@@ -425,23 +425,103 @@ This page structure is proposed for future implementation only.
 
 ## Compatibility Notes
 
-- The reference frontend uses Tailwind CSS, but the target frontend does not currently have Tailwind installed.
-- The reference frontend uses `react-icons`, but the target frontend does not currently have an icon package installed.
+- Tailwind CSS is confirmed for the Hostel frontend, but it is not installed yet.
+- Tailwind CSS should be installed and configured during the frontend foundation step.
+- `react-icons` is confirmed for the Hostel frontend, but it is not installed yet.
 - The target frontend already has `recharts`, which is useful for Hostel reports and dashboard statistics.
 - The target frontend already has `react-hook-form`, which should be useful for Hostel forms.
 - The target project currently keeps the original Vite React placeholder files. They should not be changed until the approved frontend implementation step begins.
+
+## Confirmed UI Decisions
+
+### Tailwind CSS
+
+The Hostel Management System will use Tailwind CSS for styling.
+
+Tailwind should be added through the existing Vite frontend setup during the frontend foundation step. It should not be installed or configured during the backend foundation step.
+
+Tailwind is being chosen because the UI reference project already uses it, and it can help the team build responsive and consistent screens faster.
+
+### Icons
+
+The Hostel Management System will use `react-icons`.
+
+Use `react-icons` for:
+
+- Navigation icons.
+- Dashboard cards.
+- Buttons.
+- Alerts.
+- Status information.
+
+Do not use several different icon libraries in the first version.
+
+### Colour Direction
+
+The Hostel Management System will use a professional navy-blue design.
+
+Use:
+
+- Deep navy or indigo as the main colour.
+- Soft grey-blue for page backgrounds.
+- White cards.
+- Green for success states.
+- Amber for warning states.
+- Red for error states.
+- Blue for general information states.
+
+Keep colours in shared theme settings when the frontend is implemented so they can be changed later.
+
+Do not copy the branding or exact colour identity of the reference project.
+
+### Mobile Table Behaviour
+
+Desktop Admin pages may use tables.
+
+On smaller screens:
+
+- Important table records should change into stacked cards where practical.
+- Horizontal scrolling may be used only when the table cannot be simplified.
+- Important actions must remain visible and easy to select.
+- Essential record information must not be hidden.
+
+### Public Login Page
+
+The public login page should use a split-screen layout on desktop.
+
+One side may contain:
+
+- The Hostel Management System name.
+- A short description.
+- A simple hostel-related visual or decorative section.
+
+The other side should contain the login form.
+
+On mobile, show only a clean centered login card.
+
+This is only a design decision for the frontend stage. The login page should not be implemented yet.
+
+### Notifications
+
+Notifications will be in-app only for the first version.
+
+Do not include:
+
+- Email notifications.
+- SMS notifications.
+- Push notifications.
+- Third-party notification services.
+
+The system may store and display notifications inside student and staff dashboards.
 
 ## Decisions Requiring Confirmation
 
 These design decisions should be confirmed before frontend implementation:
 
-- Whether to use Tailwind CSS or plain CSS modules/global CSS.
-- Which icon library to use.
-- Final primary colour for the Hostel Management System.
 - Whether Admin tables should use sticky headers or simple tables.
 - Whether mobile Admin tables should become cards or scroll horizontally.
-- Whether the public login page should use a background image or a simple centered panel.
-- Whether notifications remain in-app only for the first version.
+- Whether the public login page visual section should use an image, illustration, or simple decorative layout.
+- Exact navy or indigo colour values for the shared theme.
 
 ## Final Rule
 
