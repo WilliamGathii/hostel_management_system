@@ -267,9 +267,9 @@ const updateRequestStatus = async (
 ) => {
   await database.query(
     `UPDATE maintenance_requests
-     SET status = $1,
+     SET status = $1::varchar,
          completed_at = CASE
-           WHEN $1 = 'completed' THEN CURRENT_TIMESTAMP
+           WHEN $1::varchar = 'completed' THEN CURRENT_TIMESTAMP
            ELSE NULL
          END,
          updated_at = CURRENT_TIMESTAMP

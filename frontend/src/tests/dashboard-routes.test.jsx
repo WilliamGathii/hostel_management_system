@@ -68,14 +68,14 @@ describe('dashboard routing', () => {
     ).not.toBeInTheDocument();
   });
 
-  test('keeps non-dashboard module routes as placeholders', () => {
+  test('loads the Student room module route', () => {
     renderWithAuth(<AppRouter />, {
       authValue: authenticatedUser('student'),
       route: '/student/room',
     });
 
     expect(
-      screen.getByText('No room allocations are available.')
+      screen.getByRole('heading', { name: 'My Room' })
     ).toBeInTheDocument();
   });
 });

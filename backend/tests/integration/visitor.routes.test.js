@@ -154,12 +154,12 @@ describe('visitor routes', () => {
     expect(response.status).toBe(200);
   });
 
-  test('Admin cannot use Security verification endpoints', async () => {
+  test('Admin can use verification endpoints as approved by the RBAC matrix', async () => {
     const response = await request(app)
       .post(`/api/v1/visitors/${visitorId}/verify-entry`)
       .set('Authorization', authorization(users.admin))
       .send({ notes: '' });
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(201);
   });
 
   test('visitor endpoints require authentication', async () => {

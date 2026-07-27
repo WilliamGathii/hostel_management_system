@@ -126,7 +126,7 @@ const updateApproval = async (user, visitorId, approvalStatus) => {
 };
 
 const verifyEntry = async (user, visitorId, notes) => {
-  requireRole(user, 'security_staff');
+  requireRole(user, 'admin', 'security_staff');
 
   return visitorModel.withTransaction(async (database) => {
     const visitor = await visitorModel.findVisitorById(
@@ -155,7 +155,7 @@ const verifyEntry = async (user, visitorId, notes) => {
 };
 
 const verifyExit = async (user, visitorId, notes) => {
-  requireRole(user, 'security_staff');
+  requireRole(user, 'admin', 'security_staff');
 
   return visitorModel.withTransaction(async (database) => {
     const visitor = await visitorModel.findVisitorById(

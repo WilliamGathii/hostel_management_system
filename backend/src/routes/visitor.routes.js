@@ -53,7 +53,7 @@ router.patch(
 );
 router.post(
   '/:visitorId/verify-entry',
-  authorizeRoles('security_staff'),
+  authorizeRoles('admin', 'security_staff'),
   visitorIdentifierValidation,
   visitorVerificationValidation,
   handleVisitorValidation,
@@ -61,7 +61,7 @@ router.post(
 );
 router.patch(
   '/:visitorId/verify-exit',
-  authorizeRoles('security_staff'),
+  authorizeRoles('admin', 'security_staff'),
   visitorIdentifierValidation,
   visitorVerificationValidation,
   handleVisitorValidation,
