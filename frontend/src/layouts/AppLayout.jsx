@@ -26,15 +26,19 @@ export function AppLayout({ children }) {
 
   return (
     <div className="min-h-screen bg-page">
-      <Sidebar role={user.role} />
-      <div className="min-w-0 lg:pl-sidebar">
+      <Sidebar
+        isLoggingOut={isLoggingOut}
+        onLogout={handleLogout}
+        user={user}
+      />
+      <div className="min-w-0 lg:pl-[calc(var(--sidebar-width)+2.25rem)]">
         <Topbar
           isLoggingOut={isLoggingOut}
           onLogout={handleLogout}
           pathname={location.pathname}
           user={user}
         />
-        <main className="min-h-[calc(100vh-var(--topbar-height))] pb-20 lg:pb-0">
+        <main className="min-h-screen pb-24 lg:pb-8 lg:pt-2">
           {children || <Outlet />}
         </main>
         <MobileBottomNav role={user.role} />
