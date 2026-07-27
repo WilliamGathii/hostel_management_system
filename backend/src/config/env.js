@@ -1,8 +1,76 @@
+const path = require('path');
+
+const dotenv = require('dotenv');
+
+dotenv.config({
+  path: path.resolve(__dirname, '../../.env'),
+});
+
+const parsePort = (value) => {
+  const parsedPort = Number.parseInt(value, 10);
+
+  if (Number.isNaN(parsedPort)) {
+    return 5000;
+  }
+
+  return parsedPort;
+};
+
+const nodeEnv = process.env.NODE_ENV || 'development';
+
 const env = {
-  port: process.env.PORT || 5000,
-  nodeEnv: process.env.NODE_ENV || 'development',
+  port: parsePort(process.env.PORT),
+  nodeEnv,
+  databaseUrl: process.env.DATABASE_URL || '',
+  jwtSecret: process.env.JWT_SECRET || '',
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1h',
+  frontendUrl: process.env.FRONTEND_URL || '',
+  isDevelopment: nodeEnv === 'development',
+  isProduction: nodeEnv === 'production',
+  isTest: nodeEnv === 'test',
+};
+
+const getMissingImportantValues = () => {
+  const missingValues = [];
+
+  if (!env.databaseUrl) {
+    missingValues.push('DATABASE_URL');
+  }
+
+  if (!env.jwtSecret) {
+    missingValues.push('JWT_SECRET');
+  }
+
+  return missingValues;
+};
+
+const validateRequiredEnv = () => {
+  const missingValues = getMissingImportantValues();
+
+  if (env.isProduction && missingValues.length > 0) {
+    throw new Error(`Missing required environment values: ${missingValues.join(', ')}`);
+  }
+
+  return missingValues;
+};
+
+const warnAboutMissingEnv = (logger) => {
+  const missingValues = getMissingImportantValues();
+
+  if (!env.isTest && missingValues.length > 0) {
+    logger.warn(
+      `Missing environment values: ${missingValues.join(
+        ', ',
+      )}. Some future backend features will not work until they are configured.`,
+    );
+  }
+
+  return missingValues;
 };
 
 module.exports = {
   env,
+  getMissingImportantValues,
+  validateRequiredEnv,
+  warnAboutMissingEnv,
 };

@@ -1,10 +1,12 @@
 const app = require('./app');
+const { env, validateRequiredEnv, warnAboutMissingEnv } = require('./config/env');
 const logger = require('./utils/logger');
 
-const port = process.env.PORT || 5000;
+validateRequiredEnv();
+warnAboutMissingEnv(logger);
 
-const server = app.listen(port, () => {
-  logger.info(`API server running on port ${port}`);
+const server = app.listen(env.port, () => {
+  logger.info(`API server running on port ${env.port}`);
 });
 
 server.on('error', (error) => {
