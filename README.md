@@ -17,7 +17,7 @@ The Smart Hostel Management System is a planned web application for managing hos
 
 ## Current Project Status
 
-The project setup has been completed and merged into `develop`. The project scope and user roles have been confirmed, and system design documentation is being prepared for the database, ER diagram, API endpoints, and role permissions. Feature development has not started. No login pages, dashboards, forms, API routes, controllers, database tables, migrations, or business logic have been created.
+The project setup, project scope, and system design documentation have been completed and merged into `develop`. The backend foundation has been prepared on `feature/backend-foundation` for review. Feature development has not started. No login pages, dashboards, forms, feature APIs, controllers, database tables, migrations, or business logic have been created.
 
 ## Feature-Based Development Timeline
 
@@ -68,7 +68,8 @@ The project must not connect to M-Pesa, Stripe, PayPal, banks, cards, or any ext
 │   ├── api-endpoint-design.md
 │   ├── database-and-er-design.md
 │   ├── project-scope-and-roles.md
-│   └── role-permission-matrix.md
+│   ├── role-permission-matrix.md
+│   └── system-design/
 ├── docker/
 │   ├── backend/
 │   └── frontend/
@@ -106,11 +107,51 @@ cd backend
 npm install
 ```
 
+Create a local backend environment file:
+
+```bash
+cp .env.example .env
+```
+
+Fill in local values only on your own machine. Do not commit the real `.env` file.
+
+Start the backend in development:
+
+```bash
+npm run dev
+```
+
+Run backend tests:
+
+```bash
+npm test
+```
+
+Run backend linting:
+
+```bash
+npm run lint
+```
+
+Run backend formatting check:
+
+```bash
+npm run format:check
+```
+
 Run a backend package audit:
 
 ```bash
 npm audit
 ```
+
+Health-check endpoint:
+
+```text
+GET /api/v1/health
+```
+
+The backend foundation has only the health-check route. Authentication, student management, room management, room allocation, maintenance, visitors, payments, announcements, notifications, reports, and audit-log features have not been developed yet. Database migrations have not been created yet.
 
 ## Branching Structure
 
@@ -124,9 +165,13 @@ Project setup has been merged into `develop`. New work should use feature branch
 ## Planning Documents
 
 - [Project Scope and User Roles](docs/project-scope-and-roles.md)
-- [Database and ER Design](docs/database-and-er-design.md)
-- [API Endpoint Design](docs/api-endpoint-design.md)
-- [Role Permission Matrix](docs/role-permission-matrix.md)
+- [System Scope](docs/system-design/system-scope.md)
+- [Database Design](database/documentation/database-design.md)
+- [ER Diagram](docs/system-design/erd.md)
+- [API Contract](docs/system-design/api-contract.md)
+- [Role Permission Matrix](docs/system-design/rbac-matrix.md)
+- [Naming Rules](docs/system-design/naming-rules.md)
+- [Folder Ownership](docs/system-design/folder-ownership.md)
 
 ## Group Members
 
