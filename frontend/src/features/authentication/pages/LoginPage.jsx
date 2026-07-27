@@ -47,10 +47,10 @@ export function LoginPage() {
   return (
     <div>
       <div>
-        <p className="text-sm font-semibold text-information">Welcome back</p>
-        <h2 className="mt-1 text-2xl font-bold text-text">Sign in</h2>
+        <p className="text-sm font-semibold text-information">Secure access</p>
+        <h2 className="mt-1 text-2xl font-bold text-text">Welcome back</h2>
         <p className="mt-2 text-sm text-muted">
-          Use your Hostel Management System account.
+          Sign in with your hostel account.
         </p>
       </div>
 
@@ -112,6 +112,10 @@ export function LoginPage() {
           Sign in
         </Button>
       </form>
+
+      <p className="mt-6 text-center text-xs leading-5 text-muted">
+        Student accounts are created by hostel administration.
+      </p>
     </div>
   );
 }

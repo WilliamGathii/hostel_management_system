@@ -10,7 +10,7 @@ export function NotFoundPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-page px-4 py-10">
-      <div className="w-full max-w-md text-center">
+      <div className="w-full max-w-md rounded-card bg-card p-7 text-center shadow-elevated sm:p-10">
         <LuFileQuestion
           className="mx-auto size-12 text-muted"
           aria-hidden="true"
@@ -25,7 +25,7 @@ export function NotFoundPage() {
           The address may be incorrect or the page may have moved.
         </p>
         <Link
-          className="mt-6 inline-flex min-h-11 items-center justify-center rounded-card bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="mt-6 inline-flex min-h-11 items-center justify-center rounded-card bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover focus-visible:outline-primary"
           to={returnPath}
         >
           Go to a safe page

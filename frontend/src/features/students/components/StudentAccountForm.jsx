@@ -113,137 +113,157 @@ export function StudentAccountForm({
     <form className="space-y-6" noValidate onSubmit={handleSubmit(submitForm)}>
       {submitError ? <Alert variant="error">{submitError}</Alert> : null}
 
-      <div className="grid gap-5 md:grid-cols-2">
-        <FormField
-          autoComplete="name"
-          error={errors.full_name?.message}
-          label="Full name"
-          name="full_name"
-          required
-          {...register('full_name', {
-            required: 'Full name is required',
-            ...optionalTextRules('Full name'),
-          })}
-        />
-        <FormField
-          autoComplete="email"
-          error={errors.email?.message}
-          label="Email address"
-          name="email"
-          required
-          type="email"
-          {...register('email', {
-            required: 'Email is required',
-            pattern: {
-              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-              message: 'Enter a valid email address',
-            },
-          })}
-        />
-        <FormField
-          autoComplete="tel"
-          error={errors.phone?.message}
-          label="Phone number"
-          name="phone"
-          placeholder="+254..."
-          type="tel"
-          {...register('phone', optionalPhoneRules('Phone number'))}
-        />
-        <FormField
-          error={errors.student_number?.message}
-          label="Student number"
-          name="student_number"
-          required
-          {...register('student_number', {
-            required: 'Student number is required',
-            maxLength: {
-              value: 50,
-              message: 'Student number must not exceed 50 characters',
-            },
-            pattern: {
-              value: /^[A-Za-z0-9/-]+$/,
-              message: 'Student number contains unsupported characters',
-            },
-          })}
-        />
-        <FormField
-          error={errors.course?.message}
-          label="Course"
-          name="course"
-          {...register('course', optionalTextRules('Course'))}
-        />
-        <FormField
-          error={errors.year_of_study?.message}
-          label="Year of study"
-          min="1"
-          name="year_of_study"
-          type="number"
-          {...register('year_of_study', {
-            min: {
-              value: 1,
-              message: 'Year of study must be a positive number',
-            },
-          })}
-        />
-        <FormField
-          error={errors.emergency_contact_name?.message}
-          label="Emergency contact name"
-          name="emergency_contact_name"
-          {...register(
-            'emergency_contact_name',
-            optionalTextRules('Emergency contact name')
-          )}
-        />
-        <FormField
-          error={errors.emergency_contact_phone?.message}
-          label="Emergency contact phone"
-          name="emergency_contact_phone"
-          placeholder="+254..."
-          type="tel"
-          {...register(
-            'emergency_contact_phone',
-            optionalPhoneRules('Emergency contact phone')
-          )}
-        />
-      </div>
-
-      {includePassword ? (
-        <div className="grid gap-5 md:grid-cols-2">
-          <PasswordField
-            autoComplete="new-password"
-            error={errors.password?.message}
-            hint="Give this temporary password to the Student securely."
-            name="password"
+      <fieldset>
+        <legend className="text-sm font-bold text-text">Account identity</legend>
+        <p className="mt-1 text-sm text-muted">
+          Sign-in and student identification details.
+        </p>
+        <div className="mt-5 grid gap-5 md:grid-cols-2">
+          <FormField
+            autoComplete="name"
+            error={errors.full_name?.message}
+            label="Full name"
+            name="full_name"
             required
-            {...register('password', {
-              required: 'Password is required',
-              minLength: {
-                value: 8,
-                message: 'Password must have at least 8 characters',
-              },
-              maxLength: {
-                value: 72,
-                message: 'Password must not exceed 72 characters',
-              },
+            {...register('full_name', {
+              required: 'Full name is required',
+              ...optionalTextRules('Full name'),
+            })}
+          />
+          <FormField
+            autoComplete="email"
+            error={errors.email?.message}
+            label="Email address"
+            name="email"
+            required
+            type="email"
+            {...register('email', {
+              required: 'Email is required',
               pattern: {
-                value: /^(?=.*[A-Za-z])(?=.*[0-9])/,
-                message: 'Password must contain a letter and a number',
+                value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                message: 'Enter a valid email address',
               },
             })}
           />
-          <PasswordField
-            autoComplete="new-password"
-            error={errors.confirm_password?.message}
-            label="Confirm password"
-            name="confirm_password"
+          <FormField
+            autoComplete="tel"
+            error={errors.phone?.message}
+            label="Phone number"
+            name="phone"
+            placeholder="+254..."
+            type="tel"
+            {...register('phone', optionalPhoneRules('Phone number'))}
+          />
+          <FormField
+            error={errors.student_number?.message}
+            label="Student number"
+            name="student_number"
             required
-            {...register('confirm_password', {
-              required: 'Confirm the password',
-              validate: (value) =>
-                value === getValues('password') || 'Passwords do not match',
+            {...register('student_number', {
+              required: 'Student number is required',
+              maxLength: {
+                value: 50,
+                message: 'Student number must not exceed 50 characters',
+              },
+              pattern: {
+                value: /^[A-Za-z0-9/-]+$/,
+                message: 'Student number contains unsupported characters',
+              },
             })}
           />
         </div>
+      </fieldset>
+
+      <fieldset className="border-t border-border pt-6">
+        <legend className="text-sm font-bold text-text">Hostel profile</legend>
+        <p className="mt-1 text-sm text-muted">
+          Academic and emergency contact information.
+        </p>
+        <div className="mt-5 grid gap-5 md:grid-cols-2">
+          <FormField
+            error={errors.course?.message}
+            label="Course"
+            name="course"
+            {...register('course', optionalTextRules('Course'))}
+          />
+          <FormField
+            error={errors.year_of_study?.message}
+            label="Year of study"
+            min="1"
+            name="year_of_study"
+            type="number"
+            {...register('year_of_study', {
+              min: {
+                value: 1,
+                message: 'Year of study must be a positive number',
+              },
+            })}
+          />
+          <FormField
+            error={errors.emergency_contact_name?.message}
+            label="Emergency contact name"
+            name="emergency_contact_name"
+            {...register(
+              'emergency_contact_name',
+              optionalTextRules('Emergency contact name')
+            )}
+          />
+          <FormField
+            error={errors.emergency_contact_phone?.message}
+            label="Emergency contact phone"
+            name="emergency_contact_phone"
+            placeholder="+254..."
+            type="tel"
+            {...register(
+              'emergency_contact_phone',
+              optionalPhoneRules('Emergency contact phone')
+            )}
+          />
+        </div>
+      </fieldset>
+
+      {includePassword ? (
+        <fieldset className="border-t border-border pt-6">
+          <legend className="text-sm font-bold text-text">
+            Temporary password
+          </legend>
+          <div className="mt-5 grid gap-5 md:grid-cols-2">
+            <PasswordField
+              autoComplete="new-password"
+              error={errors.password?.message}
+              hint="Give this temporary password to the Student securely."
+              name="password"
+              required
+              {...register('password', {
+                required: 'Password is required',
+                minLength: {
+                  value: 8,
+                  message: 'Password must have at least 8 characters',
+                },
+                maxLength: {
+                  value: 72,
+                  message: 'Password must not exceed 72 characters',
+                },
+                pattern: {
+                  value: /^(?=.*[A-Za-z])(?=.*[0-9])/,
+                  message: 'Password must contain a letter and a number',
+                },
+              })}
+            />
+            <PasswordField
+              autoComplete="new-password"
+              error={errors.confirm_password?.message}
+              label="Confirm password"
+              name="confirm_password"
+              required
+              {...register('confirm_password', {
+                required: 'Confirm the password',
+                validate: (value) =>
+                  value === getValues('password') || 'Passwords do not match',
+              })}
+            />
+          </div>
+        </fieldset>
       ) : null}
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">

@@ -3,8 +3,8 @@ import { NavLink } from 'react-router-dom';
 import { getNavigationForRole } from '../../config/navigation';
 
 const getLinkClassName = ({ isActive }) =>
-  `flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 py-2 text-[11px] font-medium focus-visible:outline-2 focus-visible:outline-primary ${
-    isActive ? 'text-primary' : 'text-muted'
+  `relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 py-2 text-[11px] font-medium focus-visible:outline-2 focus-visible:outline-primary ${
+    isActive ? 'text-primary' : 'text-muted hover:text-text'
   }`;
 
 export function MobileBottomNav({ role }) {
@@ -12,7 +12,7 @@ export function MobileBottomNav({ role }) {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 flex min-h-16 border-t border-border bg-card lg:hidden"
+      className="fixed right-3 bottom-3 left-3 z-30 flex min-h-16 overflow-hidden rounded-card bg-card shadow-elevated lg:hidden"
       aria-label="Mobile navigation"
     >
       {navigation.map(({ Icon, label, path }) => (

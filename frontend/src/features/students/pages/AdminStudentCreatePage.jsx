@@ -28,26 +28,31 @@ export function AdminStudentCreatePage() {
   };
 
   return (
-    <PageContainer>
+    <PageContainer className="max-w-5xl">
       <PageHeader
         actions={
           <Link
-            className="inline-flex min-h-11 items-center gap-2 rounded-card border border-border bg-card px-4 py-2.5 text-sm font-semibold text-text hover:bg-page focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="inline-flex min-h-11 items-center gap-2 rounded-card bg-periwinkle-light px-4 py-2.5 text-sm font-semibold text-primary hover:bg-periwinkle focus-visible:outline-primary"
             to="/admin/students"
           >
             <LuArrowLeft aria-hidden="true" className="size-4" />
             Back to students
           </Link>
         }
-        description="Create a Student login and hostel profile."
+        description="Create a student login and hostel profile."
         title="Add Student"
       />
 
       <Card>
         <div className="mb-6">
-          <h2 className="text-lg font-bold text-text">Student information</h2>
+          <p className="text-xs font-semibold text-information">
+            New account
+          </p>
+          <h2 className="mt-1 text-lg font-bold text-text">
+            Student information
+          </h2>
           <p className="mt-1 text-sm text-muted">
-            The new account is created with the Student role and active status.
+            New accounts use the Student role and active status.
           </p>
         </div>
         <StudentAccountForm

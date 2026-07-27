@@ -1,4 +1,11 @@
-import { LuClipboardList } from 'react-icons/lu';
+import {
+  LuArrowRight,
+  LuCircleAlert,
+  LuCircleCheck,
+  LuClock3,
+  LuClipboardList,
+} from 'react-icons/lu';
+import { Link } from 'react-router-dom';
 
 import { Card } from '../../../components/common/Card';
 import { PageContainer } from '../../../components/common/PageContainer';
@@ -6,15 +13,32 @@ import { StatusChip } from '../../../components/common/StatusChip';
 import {
   DASHBOARD_BY_ROLE,
   MAINTENANCE_PRIORITIES,
-  MAINTENANCE_STATUSES,
 } from '../../../config/dashboard';
 import { useAuth } from '../../../hooks/useAuth';
 import { DashboardEmptyState } from '../components/DashboardEmptyState';
 import { DashboardPageState } from '../components/DashboardPageState';
-import { DashboardSection } from '../components/DashboardSection';
-import { DashboardStatCard } from '../components/DashboardStatCard';
 import { DashboardWelcome } from '../components/DashboardWelcome';
-import { QuickActionCard } from '../components/QuickActionCard';
+
+const workStates = [
+  {
+    title: 'Urgent work',
+    message: 'No urgent requests are assigned.',
+    Icon: LuCircleAlert,
+    tone: 'text-error',
+  },
+  {
+    title: 'In progress',
+    message: 'No requests are in progress.',
+    Icon: LuClock3,
+    tone: 'text-warning',
+  },
+  {
+    title: 'Completed work',
+    message: 'No completed requests are available.',
+    Icon: LuCircleCheck,
+    tone: 'text-success',
+  },
+];
 
 export function MaintenanceDashboardPage() {
   const { authError, isLoading, user } = useAuth();
@@ -26,7 +50,7 @@ export function MaintenanceDashboardPage() {
       isLoading={isLoading}
       user={user}
     >
-      <PageContainer className="space-y-8">
+      <PageContainer className="space-y-7">
         <DashboardWelcome
           message={dashboard.welcomeMessage}
           name={user?.full_name}
@@ -34,75 +58,79 @@ export function MaintenanceDashboardPage() {
           title={dashboard.title}
         />
 
-        <DashboardSection
-          description="Real request totals will appear after the maintenance endpoints are available."
-          title="Work summary"
-        >
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {dashboard.summaryCards.map((card) => (
-              <DashboardStatCard
-                description="This information will appear after the maintenance module is connected."
-                key={card.title}
-                {...card}
-              />
-            ))}
-          </div>
-        </DashboardSection>
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(17rem,0.7fr)]">
+          <Card className="min-h-[25rem]">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold text-information">
+                  Assigned work
+                </p>
+                <h2 className="mt-1 text-xl font-bold text-text">
+                  Maintenance Queue
+                </h2>
+                <p className="mt-1 text-sm text-muted">
+                  Requests assigned to your account.
+                </p>
+              </div>
+              <Link
+                className="inline-flex min-h-10 items-center gap-2 rounded-card bg-periwinkle-light px-3 text-sm font-semibold text-primary hover:bg-periwinkle focus-visible:outline-primary"
+                to="/maintenance/requests"
+              >
+                Assigned requests
+                <LuArrowRight className="size-4" aria-hidden="true" />
+              </Link>
+            </div>
+            <DashboardEmptyState
+              description="Assigned maintenance requests will appear here in priority order."
+              Icon={LuClipboardList}
+              title="No assigned maintenance requests are available."
+            />
+          </Card>
 
-        <DashboardSection
-          description="Open your approved maintenance work areas."
-          title="Quick actions"
-        >
-          <div className="grid max-w-3xl gap-4 sm:grid-cols-2">
-            {dashboard.quickActions.map((action) => (
-              <QuickActionCard key={action.path} {...action} />
-            ))}
-          </div>
-        </DashboardSection>
-
-        <DashboardSection
-          description="Requests assigned to your account will be listed here later."
-          title="Assigned work"
-        >
-          <DashboardEmptyState
-            description="Assigned maintenance requests will appear after the maintenance module is connected."
-            Icon={LuClipboardList}
-            title="No assigned request data available"
-          />
-        </DashboardSection>
-
-        <DashboardSection
-          description="These labels explain the approved maintenance workflow. They are not current request records."
-          title="Maintenance label guide"
-        >
-          <div className="grid gap-4 lg:grid-cols-2">
-            <Card>
-              <h3 className="font-semibold text-text">Priority explanation</h3>
-              <p className="mt-1 text-sm text-muted">
-                Priority indicates how quickly a request should be reviewed.
-              </p>
-              <div className="mt-5 flex flex-wrap gap-2">
-                {MAINTENANCE_PRIORITIES.map((priority) => (
-                  <StatusChip key={priority.label} variant={priority.variant}>
+          <Card>
+            <h2 className="text-lg font-bold text-text">Priority guide</h2>
+            <p className="mt-1 text-sm text-muted">
+              Priority shows how quickly work should be reviewed.
+            </p>
+            <div className="mt-6 space-y-3">
+              {MAINTENANCE_PRIORITIES.map((priority) => (
+                <div
+                  className="flex items-center justify-between gap-3 rounded-card bg-page px-3 py-2.5"
+                  key={priority.label}
+                >
+                  <span className="text-sm font-medium text-text">
+                    {priority.label}
+                  </span>
+                  <StatusChip variant={priority.variant}>
                     {priority.label}
                   </StatusChip>
-                ))}
-              </div>
-            </Card>
+                </div>
+              ))}
+            </div>
+            <Link
+              className="mt-6 inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-primary hover:text-primary-hover focus-visible:outline-primary"
+              to="/maintenance/history"
+            >
+              Maintenance history
+              <LuArrowRight className="size-4" aria-hidden="true" />
+            </Link>
+          </Card>
+        </div>
 
-            <Card>
-              <h3 className="font-semibold text-text">Status explanation</h3>
-              <p className="mt-1 text-sm text-muted">
-                Status describes where a request is in the maintenance workflow.
-              </p>
-              <div className="mt-5 flex flex-wrap gap-2">
-                {MAINTENANCE_STATUSES.map((status) => (
-                  <StatusChip key={status}>{status}</StatusChip>
-                ))}
-              </div>
-            </Card>
+        <section aria-labelledby="work-status-heading">
+          <h2 className="mb-4 text-lg font-bold text-text" id="work-status-heading">
+            Work status
+          </h2>
+          <div className="grid gap-6 lg:grid-cols-[1fr_1.15fr_0.85fr]">
+            {workStates.map(({ Icon, message, title, tone }) => (
+              <Card key={title}>
+                <Icon className={`size-5 ${tone}`} aria-hidden="true" />
+                <h3 className="mt-4 font-bold text-text">{title}</h3>
+                <p className="mt-2 text-sm text-muted">{message}</p>
+              </Card>
+            ))}
           </div>
-        </DashboardSection>
+        </section>
       </PageContainer>
     </DashboardPageState>
   );

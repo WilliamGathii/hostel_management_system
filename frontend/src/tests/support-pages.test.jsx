@@ -27,11 +27,11 @@ describe('public support pages', () => {
     ).toBeInTheDocument();
   });
 
-  test('states that password reset is unavailable', () => {
+  test('directs password reset requests to an administrator', () => {
     renderWithAuth(<ForgotPasswordPage />);
 
     expect(
-      screen.getByText(/password reset is not available in the first version/i)
+      screen.getByText(/contact the system administrator to reset/i)
     ).toBeInTheDocument();
     expect(screen.queryByRole('form')).not.toBeInTheDocument();
   });

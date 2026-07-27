@@ -1,55 +1,77 @@
 import {
+  LuActivity,
+  LuArrowRight,
   LuBedDouble,
-  LuChartNoAxesCombined,
-  LuHistory,
-  LuReceiptText,
+  LuClipboardCheck,
+  LuGraduationCap,
   LuUsersRound,
   LuWrench,
 } from 'react-icons/lu';
+import { Link } from 'react-router-dom';
 
+import { Card } from '../../../components/common/Card';
 import { PageContainer } from '../../../components/common/PageContainer';
 import { DASHBOARD_BY_ROLE } from '../../../config/dashboard';
 import { useAuth } from '../../../hooks/useAuth';
 import { DashboardEmptyState } from '../components/DashboardEmptyState';
 import { DashboardNotice } from '../components/DashboardNotice';
 import { DashboardPageState } from '../components/DashboardPageState';
-import { DashboardSection } from '../components/DashboardSection';
 import { DashboardStatCard } from '../components/DashboardStatCard';
 import { DashboardWelcome } from '../components/DashboardWelcome';
-import { QuickActionCard } from '../components/QuickActionCard';
+
+const summaries = [
+  { title: 'Students', Icon: LuGraduationCap, tone: 'information' },
+  { title: 'Rooms', Icon: LuBedDouble, tone: 'primary' },
+  {
+    title: 'Active allocations',
+    Icon: LuClipboardCheck,
+    tone: 'success',
+  },
+  {
+    title: 'Maintenance requests',
+    Icon: LuWrench,
+    tone: 'warning',
+  },
+];
 
 const operations = [
   {
-    title: 'Rooms and allocations',
-    description:
-      'Room availability, occupancy, and allocation records will appear after those modules are connected.',
-    Icon: LuBedDouble,
+    label: 'Room allocations',
+    path: '/admin/allocations',
+    Icon: LuClipboardCheck,
   },
   {
-    title: 'Maintenance overview',
-    description:
-      'Maintenance request and assignment records will appear after the maintenance module is connected.',
-    Icon: LuWrench,
-  },
-  {
-    title: 'Visitor approvals',
-    description:
-      'Visitor requests awaiting approval will appear after the visitor module is connected.',
+    label: 'Visitor approvals',
+    path: '/admin/visitors',
     Icon: LuUsersRound,
   },
   {
-    title: 'Payment records',
-    description:
-      'Simulated payment records will appear after the payment module is connected.',
-    Icon: LuReceiptText,
+    label: 'Maintenance',
+    path: '/admin/maintenance',
+    Icon: LuWrench,
   },
   {
-    title: 'System reports',
-    description:
-      'Reports and statistics will appear after their source modules provide real data.',
-    Icon: LuChartNoAxesCombined,
+    label: 'Recent activity',
+    path: '/admin/audit-logs',
+    Icon: LuActivity,
   },
 ];
+
+function OperationLink({ label, path, Icon }) {
+  return (
+    <Link
+      className="group flex min-h-12 items-center gap-3 rounded-card px-2 py-2 text-sm font-semibold text-text hover:bg-page focus-visible:outline-primary"
+      to={path}
+    >
+      <Icon className="size-5 shrink-0 text-primary" aria-hidden="true" />
+      <span className="min-w-0 flex-1">{label}</span>
+      <LuArrowRight
+        className="size-4 shrink-0 text-muted group-hover:text-primary"
+        aria-hidden="true"
+      />
+    </Link>
+  );
+}
 
 export function AdminDashboardPage() {
   const { authError, isLoading, user } = useAuth();
@@ -61,7 +83,7 @@ export function AdminDashboardPage() {
       isLoading={isLoading}
       user={user}
     >
-      <PageContainer className="space-y-8">
+      <PageContainer className="space-y-7">
         <DashboardWelcome
           message={dashboard.welcomeMessage}
           name={user?.full_name}
@@ -69,65 +91,90 @@ export function AdminDashboardPage() {
           title={dashboard.title}
         />
 
-        <DashboardSection
-          description="These cards are ready for real module totals. No values are shown until backend data is available."
-          title="System overview"
+        <section
+          aria-label="Hostel summary"
+          className="grid grid-cols-2 gap-4 xl:grid-cols-4"
         >
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {dashboard.summaryCards.map((card) => (
-              <DashboardStatCard key={card.title} {...card} />
-            ))}
-          </div>
-        </DashboardSection>
+          {summaries.map((summary) => (
+            <DashboardStatCard
+              key={summary.title}
+              unavailableText="No data"
+              {...summary}
+            />
+          ))}
+        </section>
 
-        <DashboardSection
-          description="Open the main hostel management areas."
-          title="Quick management actions"
-        >
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {dashboard.quickActions.map((action) => (
-              <QuickActionCard key={action.path} {...action} />
-            ))}
-          </div>
-        </DashboardSection>
-
-        <DashboardSection
-          description="Detailed operational records will be connected during their feature steps."
-          title="Hostel operations"
-        >
-          <div className="grid gap-6 xl:grid-cols-2">
-            {operations.map((operation) => (
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.65fr)_minmax(17rem,0.75fr)]">
+          <Card className="min-h-[24rem]">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold text-information">
+                  Rooms
+                </p>
+                <h2 className="mt-1 text-lg font-bold text-text">
+                  Hostel Occupancy
+                </h2>
+                <p className="mt-1 text-sm text-muted">
+                  Capacity and room use across the hostel.
+                </p>
+              </div>
+              <Link
+                className="inline-flex min-h-10 items-center gap-2 rounded-card bg-periwinkle-light px-3 text-sm font-semibold text-primary hover:bg-periwinkle focus-visible:outline-primary"
+                to="/admin/rooms"
+              >
+                Manage rooms
+                <LuArrowRight className="size-4" aria-hidden="true" />
+              </Link>
+            </div>
+            <div className="mt-8">
               <DashboardEmptyState
-                description={operation.description}
-                Icon={operation.Icon}
-                key={operation.title}
-                title={operation.title}
+                description="Occupancy information will appear when room records are available."
+                Icon={LuBedDouble}
+                title="No rooms have been added."
               />
-            ))}
-          </div>
-        </DashboardSection>
+            </div>
+          </Card>
 
-        <DashboardSection
-          description="Important actions will be listed after audit logging and module activity are connected."
-          title="Recent activity"
-        >
-          <DashboardEmptyState
-            description="System activity will appear here after audit logging and module activity are connected."
-            Icon={LuHistory}
-            title="No system activity available"
-          />
-        </DashboardSection>
+          <Card>
+            <p className="text-xs font-semibold text-information">
+              Daily workspace
+            </p>
+            <h2 className="mt-1 text-lg font-bold text-text">Operations</h2>
+            <p className="mt-1 text-sm text-muted">
+              Open the areas that need regular review.
+            </p>
+            <nav className="mt-5 space-y-1" aria-label="Admin operations">
+              {operations.map((operation) => (
+                <OperationLink key={operation.path} {...operation} />
+              ))}
+            </nav>
+          </Card>
+        </div>
 
-        <DashboardNotice title="Simulated payment limitation" variant="warning">
-          The payment module records simulated payment information only. It does
-          not process real money or connect to M-Pesa, cards, banks, PayPal,
-          Stripe, or another payment provider.
-        </DashboardNotice>
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+          <Card>
+            <h2 className="text-lg font-bold text-text">
+              Maintenance overview
+            </h2>
+            <DashboardEmptyState
+              description="New maintenance requests will appear here for review and assignment."
+              Icon={LuWrench}
+              title="No maintenance requests are available."
+            />
+          </Card>
+          <Card>
+            <h2 className="text-lg font-bold text-text">Allocation overview</h2>
+            <DashboardEmptyState
+              description="Current room allocations will appear here."
+              Icon={LuClipboardCheck}
+              title="No room allocations are available."
+            />
+          </Card>
+        </div>
 
-        <DashboardNotice title="Dashboard data">
-          Dashboard figures will be connected only after the related backend
-          modules provide real records. The planned dashboard summary endpoint
-          is not implemented yet.
+        <DashboardNotice title="Simulated payments" variant="warning">
+          Payment records demonstrate the hostel payment workflow only. No real
+          money is transferred.
         </DashboardNotice>
       </PageContainer>
     </DashboardPageState>

@@ -22,7 +22,7 @@ export const PasswordField = forwardRef(function PasswordField(
         <input
           aria-describedby={errorId || hintId}
           aria-invalid={Boolean(error)}
-          className="min-h-11 w-full rounded-card border border-border bg-card py-2.5 pr-12 pl-3.5 text-sm text-text outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary-soft"
+          className="min-h-11 w-full rounded-card border border-border bg-card py-2.5 pr-12 pl-3.5 text-sm text-text outline-none placeholder:text-muted/70 hover:border-periwinkle focus:border-primary focus:ring-3 focus:ring-primary-soft"
           id={name}
           name={name}
           ref={ref}

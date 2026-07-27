@@ -1,16 +1,44 @@
-import { LuShieldCheck } from 'react-icons/lu';
+import {
+  LuArrowRight,
+  LuCircleCheck,
+  LuClock3,
+  LuDoorOpen,
+  LuShieldCheck,
+} from 'react-icons/lu';
+import { Link } from 'react-router-dom';
 
 import { Card } from '../../../components/common/Card';
 import { PageContainer } from '../../../components/common/PageContainer';
-import { DASHBOARD_BY_ROLE, VISITOR_WORKFLOW } from '../../../config/dashboard';
+import { DASHBOARD_BY_ROLE } from '../../../config/dashboard';
 import { useAuth } from '../../../hooks/useAuth';
 import { DashboardEmptyState } from '../components/DashboardEmptyState';
 import { DashboardNotice } from '../components/DashboardNotice';
 import { DashboardPageState } from '../components/DashboardPageState';
-import { DashboardSection } from '../components/DashboardSection';
-import { DashboardStatCard } from '../components/DashboardStatCard';
 import { DashboardWelcome } from '../components/DashboardWelcome';
-import { QuickActionCard } from '../components/QuickActionCard';
+
+const timelineStages = [
+  {
+    title: 'Expected visitors',
+    message: 'No approved visitors are expected.',
+    Icon: LuClock3,
+  },
+  {
+    title: 'Currently inside',
+    message: 'No visitors are currently inside.',
+    Icon: LuDoorOpen,
+  },
+  {
+    title: 'Completed visits',
+    message: 'No completed visits are available.',
+    Icon: LuCircleCheck,
+  },
+];
+
+const workflow = [
+  'Open an approved visitor record.',
+  'Confirm the visitor identity.',
+  'Record entry or exit time.',
+];
 
 export function SecurityDashboardPage() {
   const { authError, isLoading, user } = useAuth();
@@ -22,7 +50,7 @@ export function SecurityDashboardPage() {
       isLoading={isLoading}
       user={user}
     >
-      <PageContainer className="space-y-8">
+      <PageContainer className="space-y-7">
         <DashboardWelcome
           message={dashboard.welcomeMessage}
           name={user?.full_name}
@@ -30,70 +58,91 @@ export function SecurityDashboardPage() {
           title={dashboard.title}
         />
 
-        <DashboardSection
-          description="Real visitor totals will appear after visitor verification endpoints are available."
-          title="Visitor summary"
-        >
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {dashboard.summaryCards.map((card) => (
-              <DashboardStatCard
-                description="This information will appear after the visitor module is connected."
-                key={card.title}
-                {...card}
-              />
-            ))}
-          </div>
-        </DashboardSection>
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(17rem,0.7fr)]">
+          <Card className="min-h-[25rem]">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold text-information">
+                  Today
+                </p>
+                <h2 className="mt-1 text-xl font-bold text-text">
+                  Visitor Timeline
+                </h2>
+                <p className="mt-1 text-sm text-muted">
+                  Approved visitors moving through the hostel.
+                </p>
+              </div>
+              <Link
+                className="inline-flex min-h-10 items-center gap-2 rounded-card bg-periwinkle-light px-3 text-sm font-semibold text-primary hover:bg-periwinkle focus-visible:outline-primary"
+                to="/security/visitors"
+              >
+                Approved visitors
+                <LuArrowRight className="size-4" aria-hidden="true" />
+              </Link>
+            </div>
 
-        <DashboardSection
-          description="Use these areas for approved visitor checks and history."
-          title="Quick actions"
-        >
-          <div className="grid max-w-3xl gap-4 sm:grid-cols-2">
-            {dashboard.quickActions.map((action) => (
-              <QuickActionCard key={action.path} {...action} />
-            ))}
-          </div>
-        </DashboardSection>
+            <div className="mt-8 divide-y divide-border">
+              {timelineStages.map(({ Icon, message, title }) => (
+                <div
+                  className="grid gap-3 py-5 sm:grid-cols-[auto_1fr_auto] sm:items-center"
+                  key={title}
+                >
+                  <Icon className="size-5 text-primary" aria-hidden="true" />
+                  <div>
+                    <h3 className="text-sm font-bold text-text">{title}</h3>
+                    <p className="mt-1 text-sm text-muted">{message}</p>
+                  </div>
+                  <span className="text-xs font-semibold text-muted">
+                    No records
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Card>
 
-        <DashboardSection
-          description="This is the approved visitor process for the first version."
-          title="Visitor verification process"
-        >
           <Card>
-            <ol className="grid gap-5 md:grid-cols-5">
-              {VISITOR_WORKFLOW.map((step, index) => (
-                <li className="flex gap-3 md:block" key={step}>
-                  <span className="grid size-8 shrink-0 place-items-center rounded-full bg-primary text-sm font-bold text-white">
+            <LuShieldCheck
+              className="size-6 text-primary"
+              aria-hidden="true"
+            />
+            <h2 className="mt-4 text-lg font-bold text-text">
+              Entry and exit workflow
+            </h2>
+            <ol className="mt-6 space-y-5">
+              {workflow.map((step, index) => (
+                <li className="flex gap-3" key={step}>
+                  <span className="grid size-7 shrink-0 place-items-center rounded-full bg-periwinkle-light text-xs font-bold text-primary">
                     {index + 1}
                   </span>
-                  <p className="pt-1 text-sm leading-6 text-text md:mt-3 md:pt-0">
-                    {step}
-                  </p>
+                  <p className="pt-1 text-sm leading-5 text-text">{step}</p>
                 </li>
               ))}
             </ol>
+            <Link
+              className="mt-7 inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-primary hover:text-primary-hover focus-visible:outline-primary"
+              to="/security/history"
+            >
+              Visitor history
+              <LuArrowRight className="size-4" aria-hidden="true" />
+            </Link>
           </Card>
-        </DashboardSection>
+        </div>
 
-        <DashboardSection
-          description="Only visitors approved by an Admin will be available for entry or exit verification."
-          title="Approved visitors"
-        >
+        <Card>
+          <h2 className="text-lg font-bold text-text">Approved visitor list</h2>
           <DashboardEmptyState
-            description="Approved visitor records will appear after the visitor module is connected."
+            description="Visitors approved by an Admin will appear here for verification."
             Icon={LuShieldCheck}
-            title="No approved visitor data available"
+            title="No approved visitors are available."
           />
-        </DashboardSection>
+        </Card>
 
         <DashboardNotice
           title="Security Staff permissions"
           variant="information"
         >
-          Security Staff can verify visitor entry and exit. Security Staff
-          cannot approve or reject visitors and cannot manage rooms or room
-          allocations.
+          Security Staff verify entry and exit. They cannot approve or reject
+          visitor requests.
         </DashboardNotice>
       </PageContainer>
     </DashboardPageState>
