@@ -57,7 +57,7 @@ General rules:
 
 | Method | Endpoint | Purpose | Allowed Roles | Main Request Fields | Main Response Fields | Validation Rules | Status Codes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `POST` | `/api/v1/auth/register` | Register a user account. | Public | `full_name`, `email`, `phone`, `password`, `role` | `user`, `token` | Email must be unique. Password must meet security rules. Role must be approved. | `201`, `400`, `409`, `422`, `500` |
+| `POST` | `/api/v1/auth/register` | Register a Student account. | Public | `full_name`, `email`, `phone`, `password`, `student_number`; optional `course`, `year_of_study` | `user`, `token` | Email and student number must be unique. Password must meet security rules. The role is always `student` and cannot be selected by the requester. | `201`, `400`, `409`, `422`, `500` |
 | `POST` | `/api/v1/auth/login` | Log in and receive a JWT. | Public | `email`, `password` | `user`, `token` | Email and password are required. Account must be active. | `200`, `400`, `401`, `403`, `422`, `500` |
 | `POST` | `/api/v1/auth/logout` | End the client session. | Student, Admin, Maintenance Staff, Security Staff | None | `message` | JWT must be valid. | `200`, `401`, `500` |
 | `GET` | `/api/v1/auth/me` | View the current authenticated user. | Student, Admin, Maintenance Staff, Security Staff | None | `user`, `profile` | JWT must be valid. | `200`, `401`, `404`, `500` |
