@@ -6,6 +6,9 @@ import { AdminDashboardPage } from '../features/dashboard/pages/AdminDashboardPa
 import { MaintenanceDashboardPage } from '../features/dashboard/pages/MaintenanceDashboardPage';
 import { SecurityDashboardPage } from '../features/dashboard/pages/SecurityDashboardPage';
 import { StudentDashboardPage } from '../features/dashboard/pages/StudentDashboardPage';
+import { AdminStudentDetailPage } from '../features/students/pages/AdminStudentDetailPage';
+import { AdminStudentListPage } from '../features/students/pages/AdminStudentListPage';
+import { StudentProfilePage } from '../features/students/pages/StudentProfilePage';
 import { AppLayout } from '../layouts/AppLayout';
 import { AuthLayout } from '../layouts/AuthLayout';
 import { FeaturePlaceholderPage } from '../pages/FeaturePlaceholderPage';
@@ -42,15 +45,7 @@ export function AppRouter() {
               element={<StudentDashboardPage />}
               path="/student/dashboard"
             />
-            <Route
-              element={
-                <Placeholder
-                  description="View and update your student information."
-                  title="Profile"
-                />
-              }
-              path="/student/profile"
-            />
+            <Route element={<StudentProfilePage />} path="/student/profile" />
             <Route
               element={
                 <Placeholder
@@ -109,14 +104,10 @@ export function AppRouter() {
 
           <Route element={<RoleRoute allowedRoles={['admin']} />}>
             <Route element={<AdminDashboardPage />} path="/admin/dashboard" />
+            <Route element={<AdminStudentListPage />} path="/admin/students" />
             <Route
-              element={
-                <Placeholder
-                  description="Manage Student accounts and status."
-                  title="Student management"
-                />
-              }
-              path="/admin/students"
+              element={<AdminStudentDetailPage />}
+              path="/admin/students/:studentId"
             />
             <Route
               element={
