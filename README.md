@@ -17,7 +17,10 @@ The Smart Hostel Management System is a planned web application for managing hos
 
 ## Current Project Status
 
-The project setup, scope, system design, and backend foundation are complete. Backend authentication and role-based access control are being developed on `feature/authentication`. Frontend authentication screens and other system features have not been created.
+The project setup, scope, system design, backend foundation, and backend
+authentication are complete. The frontend foundation and authentication
+interface are being developed on `feature/frontend-foundation`. Full
+dashboards and future system modules have not been developed.
 
 ## Feature-Based Development Timeline
 
@@ -91,12 +94,62 @@ cd frontend
 npm install
 ```
 
-Run frontend checks:
+Create the local frontend environment file:
+
+```bash
+cp .env.example .env
+```
+
+The expected local value is:
+
+```text
+VITE_API_BASE_URL=http://localhost:5000/api/v1
+```
+
+Start the frontend:
+
+```bash
+npm run dev
+```
+
+Run frontend tests:
+
+```bash
+npm test
+```
+
+Run linting:
+
+```bash
+npm run lint
+```
+
+Create a production build:
 
 ```bash
 npm run build
-npm run lint
 ```
+
+Public frontend routes:
+
+```text
+/login
+/register
+/forgot-password
+/unauthorized
+```
+
+Role home routes:
+
+```text
+/student/dashboard
+/admin/dashboard
+/maintenance/dashboard
+/security/dashboard
+```
+
+The role home pages and future module routes are placeholders. Full dashboards
+begin in Step 7.
 
 ## Backend Setup
 
@@ -200,8 +253,10 @@ npm run create:admin
 Run the authentication table migration before using the setup script. The
 script requires a local development database and refuses to run in production.
 
-The frontend login and registration screens have not been created. Student
-management, rooms, allocations, maintenance, visitors, payments,
+The frontend login and Student registration pages use these authentication
+endpoints. Admin and staff accounts cannot use public registration.
+
+Student management, rooms, allocations, maintenance, visitors, payments,
 announcements, notifications, reports, and audit-log features have not been
 developed yet.
 
@@ -225,6 +280,7 @@ Project setup has been merged into `develop`. New work should use feature branch
 - [Naming Rules](docs/system-design/naming-rules.md)
 - [Folder Ownership](docs/system-design/folder-ownership.md)
 - [Authentication Design](docs/system-design/authentication-design.md)
+- [Frontend Foundation](docs/system-design/frontend-foundation.md)
 
 ## Group Members
 
