@@ -15,7 +15,10 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"**/*.{js,json,md}\" --ignore-path ../.prettierignore",
-    "format:check": "prettier --check \"**/*.{js,json,md}\" --ignore-path ../.prettierignore"
+    "format:check": "prettier --check \"**/*.{js,json,md}\" --ignore-path ../.prettierignore",
+    "migrate:create": "node scripts/run-migrations.js create",
+    "migrate:up": "node scripts/run-migrations.js up",
+    "migrate:down": "node scripts/run-migrations.js down"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
