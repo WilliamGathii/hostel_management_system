@@ -59,6 +59,11 @@ export function LoginPage() {
           <Alert variant="error">{submitError}</Alert>
         </div>
       ) : null}
+      {location.state?.notice ? (
+        <div className="mt-5">
+          <Alert variant="success">{location.state.notice}</Alert>
+        </div>
+      ) : null}
 
       <form
         className="mt-6 space-y-5"
