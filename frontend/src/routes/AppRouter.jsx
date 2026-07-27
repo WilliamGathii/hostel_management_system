@@ -15,6 +15,8 @@ import { AdminStudentCreatePage } from '../features/students/pages/AdminStudentC
 import { AdminStudentDetailPage } from '../features/students/pages/AdminStudentDetailPage';
 import { AdminStudentListPage } from '../features/students/pages/AdminStudentListPage';
 import { StudentProfilePage } from '../features/students/pages/StudentProfilePage';
+import { VisitorDetailPage } from '../features/visitors/pages/VisitorDetailPage';
+import { VisitorPage } from '../features/visitors/pages/VisitorPage';
 import { AppLayout } from '../layouts/AppLayout';
 import { AuthLayout } from '../layouts/AuthLayout';
 import { FeaturePlaceholderPage } from '../pages/FeaturePlaceholderPage';
@@ -57,14 +59,10 @@ export function AppRouter() {
               element={<MaintenanceDetailPage />}
               path="/student/maintenance/:requestId"
             />
+            <Route element={<VisitorPage />} path="/student/visitors" />
             <Route
-              element={
-                <Placeholder
-                  description="Register and review your visitor requests."
-                  title="Visitor registration"
-                />
-              }
-              path="/student/visitors"
+              element={<VisitorDetailPage />}
+              path="/student/visitors/:visitorId"
             />
             <Route
               element={
@@ -120,14 +118,10 @@ export function AppRouter() {
               element={<MaintenanceDetailPage />}
               path="/admin/maintenance/:requestId"
             />
+            <Route element={<VisitorPage />} path="/admin/visitors" />
             <Route
-              element={
-                <Placeholder
-                  description="Approve or reject visitor requests."
-                  title="Visitor approvals"
-                />
-              }
-              path="/admin/visitors"
+              element={<VisitorDetailPage />}
+              path="/admin/visitors/:visitorId"
             />
             <Route
               element={
@@ -188,22 +182,13 @@ export function AppRouter() {
               element={<SecurityDashboardPage />}
               path="/security/dashboard"
             />
+            <Route element={<VisitorPage />} path="/security/visitors" />
             <Route
-              element={
-                <Placeholder
-                  description="View approved visitors and record entry or exit."
-                  title="Approved visitors"
-                />
-              }
-              path="/security/visitors"
+              element={<VisitorDetailPage />}
+              path="/security/visitors/:visitorId"
             />
             <Route
-              element={
-                <Placeholder
-                  description="Review recorded visitor entry and exit history."
-                  title="Visitor history"
-                />
-              }
+              element={<VisitorPage historyOnly />}
               path="/security/history"
             />
           </Route>
