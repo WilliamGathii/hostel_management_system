@@ -1,8 +1,10 @@
+const { sendError } = require('../utils/api-response');
+
 const notFound = (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found',
-    errors: [],
+  sendError(res, {
+    statusCode: 404,
+    message: `Route not found: ${req.method} ${req.originalUrl}`,
+    requestId: req.requestId,
   });
 };
 
