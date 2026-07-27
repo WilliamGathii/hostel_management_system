@@ -9,7 +9,7 @@ import { PageHeader } from '../../../components/common/PageHeader';
 import { StatusChip } from '../../../components/common/StatusChip';
 import { Alert } from '../../../components/feedback/Alert';
 import { ErrorState } from '../../../components/feedback/ErrorState';
-import { LoadingSpinner } from '../../../components/feedback/LoadingSpinner';
+import { PanelSkeleton } from '../../../components/feedback/Skeleton';
 import { FormField } from '../../../components/forms/FormField';
 import { useAuth } from '../../../hooks/useAuth';
 import {
@@ -166,9 +166,7 @@ export function StudentProfilePage() {
   if (isLoading) {
     return (
       <PageContainer>
-        <Card className="grid min-h-72 place-items-center">
-          <LoadingSpinner label="Loading your profile" />
-        </Card>
+        <PanelSkeleton label="Loading your profile" />
       </PageContainer>
     );
   }
@@ -207,142 +205,163 @@ export function StudentProfilePage() {
           <Alert variant="success">{successMessage}</Alert>
         ) : null}
 
-        <Card>
-          <h2 className="text-lg font-bold text-text">Account summary</h2>
-          <p className="mt-1 text-sm text-muted">
-            These account fields are read-only.
-          </p>
-          <dl className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
-            <SummaryItem label="Name">
-              {displayValue(student.full_name)}
-            </SummaryItem>
-            <SummaryItem label="Student number">
-              {displayValue(student.student_number)}
-            </SummaryItem>
-            <SummaryItem label="Email">
-              {displayValue(student.email)}
-            </SummaryItem>
-            <SummaryItem label="Account status">
-              <StatusChip
-                variant={
-                  student.account_status === 'active' ? 'success' : 'warning'
-                }
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(18rem,0.65fr)]">
+          <Card>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-text">
+                  {isEditing
+                    ? 'Edit personal information'
+                    : 'Personal information'}
+                </h2>
+                <p className="mt-1 text-sm text-muted">
+                  {isEditing
+                    ? 'Update the information you are allowed to manage.'
+                    : 'Contact, course, and emergency details.'}
+                </p>
+              </div>
+              {!isEditing ? (
+                <span className="rounded-full bg-information-soft px-2.5 py-1 text-xs font-semibold text-information">
+                  Editable
+                </span>
+              ) : null}
+            </div>
+
+            {isEditing ? (
+              <form
+                className="mt-6 space-y-6"
+                noValidate
+                onSubmit={handleSubmit(submitProfile)}
               >
-                {formatStatus(student.account_status)}
-              </StatusChip>
-            </SummaryItem>
-            <SummaryItem label="Role">Student</SummaryItem>
-          </dl>
-        </Card>
+                {formError ? <Alert variant="error">{formError}</Alert> : null}
 
-        {isEditing ? (
-          <Card>
-            <h2 className="text-lg font-bold text-text">
-              Edit personal information
-            </h2>
-            <p className="mt-1 text-sm text-muted">
-              Only the fields below can be changed.
-            </p>
+                <div className="grid gap-5 md:grid-cols-2">
+                  <FormField
+                    error={errors.phone?.message}
+                    label="Phone number"
+                    name="phone"
+                    placeholder="+254..."
+                    {...register('phone', {
+                      validate: validateOptionalPhone,
+                    })}
+                  />
+                  <FormField
+                    error={errors.course?.message}
+                    label="Course"
+                    name="course"
+                    {...register('course', {
+                      validate: (value) =>
+                        validateOptionalText('Course', value),
+                    })}
+                  />
+                  <FormField
+                    error={errors.year_of_study?.message}
+                    label="Year of study"
+                    min="1"
+                    name="year_of_study"
+                    type="number"
+                    {...register('year_of_study', {
+                      validate: (value) =>
+                        !value ||
+                        (Number.isInteger(Number(value)) &&
+                          Number(value) >= 1) ||
+                        'Year of study must be a positive integer',
+                    })}
+                  />
+                  <FormField
+                    error={errors.emergency_contact_name?.message}
+                    label="Emergency contact name"
+                    name="emergency_contact_name"
+                    {...register('emergency_contact_name', {
+                      validate: (value) =>
+                        validateOptionalText('Emergency contact name', value),
+                    })}
+                  />
+                  <FormField
+                    className="md:col-span-2"
+                    error={errors.emergency_contact_phone?.message}
+                    label="Emergency contact phone"
+                    name="emergency_contact_phone"
+                    placeholder="+254..."
+                    {...register('emergency_contact_phone', {
+                      validate: validateOptionalPhone,
+                    })}
+                  />
+                </div>
 
-            <form
-              className="mt-6 space-y-6"
-              noValidate
-              onSubmit={handleSubmit(submitProfile)}
-            >
-              {formError ? <Alert variant="error">{formError}</Alert> : null}
-
-              <div className="grid gap-5 md:grid-cols-2">
-                <FormField
-                  error={errors.phone?.message}
-                  label="Phone number"
-                  name="phone"
-                  placeholder="+254..."
-                  {...register('phone', {
-                    validate: validateOptionalPhone,
-                  })}
-                />
-                <FormField
-                  error={errors.course?.message}
-                  label="Course"
-                  name="course"
-                  {...register('course', {
-                    validate: (value) => validateOptionalText('Course', value),
-                  })}
-                />
-                <FormField
-                  error={errors.year_of_study?.message}
-                  label="Year of study"
-                  min="1"
-                  name="year_of_study"
-                  type="number"
-                  {...register('year_of_study', {
-                    validate: (value) =>
-                      !value ||
-                      (Number.isInteger(Number(value)) && Number(value) >= 1) ||
-                      'Year of study must be a positive integer',
-                  })}
-                />
-                <FormField
-                  error={errors.emergency_contact_name?.message}
-                  label="Emergency contact name"
-                  name="emergency_contact_name"
-                  {...register('emergency_contact_name', {
-                    validate: (value) =>
-                      validateOptionalText('Emergency contact name', value),
-                  })}
-                />
-                <FormField
-                  className="md:col-span-2"
-                  error={errors.emergency_contact_phone?.message}
-                  label="Emergency contact phone"
-                  name="emergency_contact_phone"
-                  placeholder="+254..."
-                  {...register('emergency_contact_phone', {
-                    validate: validateOptionalPhone,
-                  })}
-                />
-              </div>
-
-              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                <Button
-                  disabled={isSubmitting}
-                  onClick={cancelEditing}
-                  variant="secondary"
-                >
-                  <LuX aria-hidden="true" className="size-4" />
-                  Cancel
-                </Button>
-                <Button isLoading={isSubmitting} type="submit">
-                  <LuSave aria-hidden="true" className="size-4" />
-                  Save changes
-                </Button>
-              </div>
-            </form>
+                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <Button
+                    disabled={isSubmitting}
+                    onClick={cancelEditing}
+                    variant="secondary"
+                  >
+                    <LuX aria-hidden="true" className="size-4" />
+                    Cancel
+                  </Button>
+                  <Button isLoading={isSubmitting} type="submit">
+                    <LuSave aria-hidden="true" className="size-4" />
+                    Save changes
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <dl className="mt-6 grid gap-6 sm:grid-cols-2">
+                <SummaryItem label="Phone number">
+                  {displayValue(student.phone)}
+                </SummaryItem>
+                <SummaryItem label="Course">
+                  {displayValue(student.course)}
+                </SummaryItem>
+                <SummaryItem label="Year of study">
+                  {displayValue(student.year_of_study)}
+                </SummaryItem>
+                <SummaryItem label="Emergency contact name">
+                  {displayValue(student.emergency_contact_name)}
+                </SummaryItem>
+                <SummaryItem label="Emergency contact phone">
+                  {displayValue(student.emergency_contact_phone)}
+                </SummaryItem>
+              </dl>
+            )}
           </Card>
-        ) : (
+
           <Card>
-            <h2 className="text-lg font-bold text-text">
-              Personal information
-            </h2>
-            <dl className="mt-6 grid gap-5 sm:grid-cols-2">
-              <SummaryItem label="Phone number">
-                {displayValue(student.phone)}
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-text">
+                  Account summary
+                </h2>
+                <p className="mt-1 text-sm text-muted">
+                  Managed by hostel administration.
+                </p>
+              </div>
+              <span className="rounded-full bg-page px-2.5 py-1 text-xs font-semibold text-muted">
+                Read only
+              </span>
+            </div>
+            <dl className="mt-6 space-y-5">
+              <SummaryItem label="Name">
+                {displayValue(student.full_name)}
               </SummaryItem>
-              <SummaryItem label="Course">
-                {displayValue(student.course)}
+              <SummaryItem label="Student number">
+                {displayValue(student.student_number)}
               </SummaryItem>
-              <SummaryItem label="Year of study">
-                {displayValue(student.year_of_study)}
+              <SummaryItem label="Email">
+                {displayValue(student.email)}
               </SummaryItem>
-              <SummaryItem label="Emergency contact name">
-                {displayValue(student.emergency_contact_name)}
+              <SummaryItem label="Account status">
+                <StatusChip
+                  variant={
+                    student.account_status === 'active' ? 'success' : 'warning'
+                  }
+                >
+                  {formatStatus(student.account_status)}
+                </StatusChip>
               </SummaryItem>
-              <SummaryItem label="Emergency contact phone">
-                {displayValue(student.emergency_contact_phone)}
-              </SummaryItem>
+              <SummaryItem label="Role">Student</SummaryItem>
             </dl>
           </Card>
-        )}
+        </div>
       </div>
     </PageContainer>
   );

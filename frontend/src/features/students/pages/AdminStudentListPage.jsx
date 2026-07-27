@@ -15,7 +15,7 @@ import { PageHeader } from '../../../components/common/PageHeader';
 import { StatusChip } from '../../../components/common/StatusChip';
 import { EmptyState } from '../../../components/feedback/EmptyState';
 import { ErrorState } from '../../../components/feedback/ErrorState';
-import { LoadingSpinner } from '../../../components/feedback/LoadingSpinner';
+import { Skeleton } from '../../../components/feedback/Skeleton';
 import { getStudents } from '../services/student.service';
 
 const PAGE_LIMIT = 10;
@@ -52,11 +52,12 @@ const initialPagination = {
 
 function StudentMobileCard({ student }) {
   return (
-    <Card>
+    <article className="rounded-card bg-page p-4">
       <div className="flex items-start gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-card bg-primary-soft text-primary">
-          <LuUserRound aria-hidden="true" className="size-5" />
-        </span>
+        <LuUserRound
+          aria-hidden="true"
+          className="mt-0.5 size-5 shrink-0 text-primary"
+        />
         <div className="min-w-0 flex-1">
           <p className="break-words font-semibold text-text">
             {student.full_name}
@@ -68,19 +69,15 @@ function StudentMobileCard({ student }) {
         </StatusChip>
       </div>
 
-      <dl className="mt-5 grid gap-4 text-sm">
+      <dl className="mt-5 grid grid-cols-2 gap-4 text-sm">
         <div>
-          <dt className="text-xs font-semibold uppercase text-muted">
-            Student number
-          </dt>
-          <dd className="mt-1 font-medium text-text">
+          <dt className="text-xs font-semibold text-muted">Student number</dt>
+          <dd className="mt-1 break-words font-medium text-text">
             {student.student_number}
           </dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase text-muted">
-            Registered
-          </dt>
+          <dt className="text-xs font-semibold text-muted">Registered</dt>
           <dd className="mt-1 font-medium text-text">
             {formatDate(student.account_created_at)}
           </dd>
@@ -88,12 +85,12 @@ function StudentMobileCard({ student }) {
       </dl>
 
       <Link
-        className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-card border border-border bg-card px-4 py-2.5 text-sm font-semibold text-text hover:bg-page focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="mt-5 inline-flex min-h-10 w-full items-center justify-center rounded-card bg-periwinkle-light px-4 text-sm font-semibold text-primary hover:bg-periwinkle focus-visible:outline-primary"
         to={`/admin/students/${student.id}`}
       >
         View details
       </Link>
-    </Card>
+    </article>
   );
 }
 
@@ -158,21 +155,22 @@ export function AdminStudentListPage() {
       <PageHeader
         actions={
           <Link
-            className="inline-flex min-h-11 items-center gap-2 rounded-card bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="inline-flex min-h-11 items-center gap-2 rounded-card bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-hover focus-visible:outline-primary"
             to="/admin/students/new"
           >
             <LuPlus aria-hidden="true" className="size-4" />
             Add Student
           </Link>
         }
-        description="View and manage registered student accounts."
+        description="Find student accounts and review their account status."
         title="Student Management"
       />
 
       <Card>
         <form
-          className="grid gap-4 md:grid-cols-[minmax(0,1fr)_12rem_auto]"
+          className="grid gap-4 rounded-card bg-page p-4 md:grid-cols-[minmax(0,1fr)_12rem_auto]"
           onSubmit={submitSearch}
+          role="search"
         >
           <div>
             <label
@@ -182,7 +180,7 @@ export function AdminStudentListPage() {
               Search students
             </label>
             <input
-              className="min-h-11 w-full rounded-card border border-border bg-card px-3.5 py-2.5 text-sm text-text outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary-soft"
+              className="min-h-11 w-full rounded-card border border-border bg-card px-3.5 py-2.5 text-sm text-text outline-none placeholder:text-muted/70 hover:border-periwinkle focus:border-primary focus:ring-3 focus:ring-primary-soft"
               id="student-search"
               onChange={(event) => setSearchInput(event.target.value)}
               placeholder="Name, student number or email"
@@ -199,7 +197,7 @@ export function AdminStudentListPage() {
               Account status
             </label>
             <select
-              className="min-h-11 w-full rounded-card border border-border bg-card px-3.5 py-2.5 text-sm text-text outline-none focus:border-primary focus:ring-2 focus:ring-primary-soft"
+              className="min-h-11 w-full rounded-card border border-border bg-card px-3.5 py-2.5 text-sm text-text outline-none hover:border-periwinkle focus:border-primary focus:ring-3 focus:ring-primary-soft"
               id="student-status"
               onChange={changeStatus}
               value={status}
@@ -216,17 +214,10 @@ export function AdminStudentListPage() {
             Search
           </Button>
         </form>
-      </Card>
 
-      <section className="mt-6" aria-labelledby="student-results-title">
-        <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mt-6 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2
-              className="text-lg font-bold text-text"
-              id="student-results-title"
-            >
-              Student accounts
-            </h2>
+            <h2 className="text-lg font-bold text-text">Student accounts</h2>
             <p className="text-sm text-muted">
               {pagination.total} total student
               {pagination.total === 1 ? '' : 's'}
@@ -238,54 +229,54 @@ export function AdminStudentListPage() {
           </p>
         </div>
 
-        {isLoading ? (
-          <Card className="grid min-h-64 place-items-center">
-            <LoadingSpinner label="Loading students" />
-          </Card>
-        ) : hasError ? (
-          <Card>
+        <div className="mt-4">
+          {isLoading ? (
+            <div className="space-y-3 py-2" role="status">
+              <span className="sr-only">Loading students</span>
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </div>
+          ) : hasError ? (
             <ErrorState
-              description="We could not load Student accounts."
+              description="We could not load student accounts."
               onRetry={loadStudents}
               title="Student list unavailable"
             />
-          </Card>
-        ) : students.length === 0 ? (
-          <Card>
+          ) : students.length === 0 ? (
             <EmptyState
               description={
                 hasFilters
-                  ? 'Try a different search or account status.'
-                  : 'Student accounts will appear here after registration.'
+                  ? 'Try a different name, student number, email, or status.'
+                  : 'Create a student account to begin.'
               }
+              Icon={LuUserRound}
               title={
                 hasFilters
-                  ? 'No students matched your search'
-                  : 'No student accounts are available yet'
+                  ? 'No student accounts matched your search.'
+                  : 'No student accounts are available.'
               }
             />
-          </Card>
-        ) : (
-          <>
-            <Card className="hidden overflow-hidden p-0 md:block">
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-left text-sm">
-                  <thead className="bg-page text-xs uppercase text-muted">
+          ) : (
+            <>
+              <div className="hidden overflow-hidden rounded-card border border-border md:block">
+                <table className="w-full table-fixed border-collapse text-left text-sm">
+                  <thead className="bg-page text-xs text-muted">
                     <tr>
-                      <th className="px-5 py-3 font-semibold" scope="col">
+                      <th className="w-[32%] px-5 py-3 font-semibold" scope="col">
                         Student
                       </th>
-                      <th className="px-5 py-3 font-semibold" scope="col">
+                      <th className="w-[19%] px-5 py-3 font-semibold" scope="col">
                         Student number
                       </th>
-                      <th className="px-5 py-3 font-semibold" scope="col">
-                        Account status
+                      <th className="w-[16%] px-5 py-3 font-semibold" scope="col">
+                        Status
                       </th>
-                      <th className="px-5 py-3 font-semibold" scope="col">
+                      <th className="w-[18%] px-5 py-3 font-semibold" scope="col">
                         Registered
                       </th>
                       <th
-                        className="px-5 py-3 text-right font-semibold"
+                        className="w-[15%] px-5 py-3 text-right font-semibold"
                         scope="col"
                       >
                         Action
@@ -294,14 +285,16 @@ export function AdminStudentListPage() {
                   </thead>
                   <tbody className="divide-y divide-border">
                     {students.map((student) => (
-                      <tr key={student.id}>
+                      <tr className="hover:bg-page/70" key={student.id}>
                         <td className="px-5 py-4">
-                          <p className="font-semibold text-text">
+                          <p className="truncate font-semibold text-text">
                             {student.full_name}
                           </p>
-                          <p className="mt-1 text-muted">{student.email}</p>
+                          <p className="mt-1 truncate text-muted">
+                            {student.email}
+                          </p>
                         </td>
-                        <td className="px-5 py-4 font-medium text-text">
+                        <td className="truncate px-5 py-4 font-medium text-text">
                           {student.student_number}
                         </td>
                         <td className="px-5 py-4">
@@ -316,7 +309,7 @@ export function AdminStudentListPage() {
                         </td>
                         <td className="px-5 py-4 text-right">
                           <Link
-                            className="font-semibold text-primary hover:text-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                            className="font-semibold text-primary hover:text-primary-hover focus-visible:outline-primary"
                             to={`/admin/students/${student.id}`}
                           >
                             View details
@@ -327,17 +320,17 @@ export function AdminStudentListPage() {
                   </tbody>
                 </table>
               </div>
-            </Card>
 
-            <div className="grid gap-4 md:hidden">
-              {students.map((student) => (
-                <StudentMobileCard key={student.id} student={student} />
-              ))}
-            </div>
-          </>
-        )}
+              <div className="grid gap-4 md:hidden">
+                {students.map((student) => (
+                  <StudentMobileCard key={student.id} student={student} />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
 
-        <div className="mt-5 flex items-center justify-between gap-3">
+        <div className="mt-5 flex items-center justify-between gap-3 border-t border-border pt-5">
           <Button
             disabled={!canGoBack || isLoading}
             onClick={() => setPage((currentPage) => currentPage - 1)}
@@ -355,7 +348,7 @@ export function AdminStudentListPage() {
             <LuChevronRight aria-hidden="true" className="size-4" />
           </Button>
         </div>
-      </section>
+      </Card>
     </PageContainer>
   );
 }

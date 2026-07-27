@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { LuArrowLeft, LuPencil, LuShieldCheck } from 'react-icons/lu';
+import {
+  LuArrowLeft,
+  LuGraduationCap,
+  LuPencil,
+  LuShieldCheck,
+} from 'react-icons/lu';
 import { Link, useLocation, useParams } from 'react-router-dom';
 
 import { Button } from '../../../components/common/Button';
@@ -9,7 +14,7 @@ import { PageHeader } from '../../../components/common/PageHeader';
 import { StatusChip } from '../../../components/common/StatusChip';
 import { Alert } from '../../../components/feedback/Alert';
 import { ErrorState } from '../../../components/feedback/ErrorState';
-import { LoadingSpinner } from '../../../components/feedback/LoadingSpinner';
+import { PanelSkeleton } from '../../../components/feedback/Skeleton';
 import { StudentAccountForm } from '../components/StudentAccountForm';
 import {
   getStudentById,
@@ -70,8 +75,8 @@ const formatDate = (value, includeTime = false) => {
 function DetailItem({ label, children }) {
   return (
     <div className="min-w-0">
-      <dt className="text-xs font-semibold uppercase text-muted">{label}</dt>
-      <dd className="mt-2 break-words text-sm font-semibold text-text">
+      <dt className="text-xs font-semibold text-muted">{label}</dt>
+      <dd className="mt-1.5 break-words text-sm font-semibold text-text">
         {children}
       </dd>
     </div>
@@ -182,9 +187,7 @@ export function AdminStudentDetailPage() {
   if (isLoading) {
     return (
       <PageContainer>
-        <Card className="grid min-h-72 place-items-center">
-          <LoadingSpinner label="Loading student details" />
-        </Card>
+        <PanelSkeleton label="Loading student details" />
       </PageContainer>
     );
   }
@@ -201,7 +204,7 @@ export function AdminStudentDetailPage() {
           />
         </Card>
         <Link
-          className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-card px-2 text-sm font-semibold text-primary hover:text-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-card px-2 text-sm font-semibold text-primary hover:text-primary-hover focus-visible:outline-primary"
           to="/admin/students"
         >
           <LuArrowLeft aria-hidden="true" className="size-4" />
@@ -218,7 +221,7 @@ export function AdminStudentDetailPage() {
     <PageContainer>
       <PageHeader
         actions={
-          <div className="flex flex-wrap gap-3">
+          <>
             {!isEditingAccount ? (
               <Button
                 onClick={() => {
@@ -233,15 +236,15 @@ export function AdminStudentDetailPage() {
               </Button>
             ) : null}
             <Link
-              className="inline-flex min-h-11 items-center gap-2 rounded-card border border-border bg-card px-4 py-2.5 text-sm font-semibold text-text hover:bg-page focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              className="inline-flex min-h-11 items-center gap-2 rounded-card bg-periwinkle-light px-4 py-2.5 text-sm font-semibold text-primary hover:bg-periwinkle focus-visible:outline-primary"
               to="/admin/students"
             >
               <LuArrowLeft aria-hidden="true" className="size-4" />
               Back to students
             </Link>
-          </div>
+          </>
         }
-        description="Review safe account information and manage account status."
+        description="Review student information and account access."
         title="Student Details"
       />
 
@@ -250,78 +253,100 @@ export function AdminStudentDetailPage() {
           <Alert variant="success">{successMessage}</Alert>
         ) : null}
 
-        {isEditingAccount ? (
-          <Card>
-            <div className="mb-6">
-              <h2 className="text-lg font-bold text-text">
-                Edit Student information
-              </h2>
-              <p className="mt-1 text-sm text-muted">
-                Role, status, password, and account dates cannot be changed
-                here.
-              </p>
-            </div>
-            <StudentAccountForm
-              initialValues={student}
-              onCancel={() => setIsEditingAccount(false)}
-              onSubmit={submitStudentUpdate}
-              submitLabel="Save changes"
-            />
-          </Card>
-        ) : (
-          <Card>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-text">
+        <Card className="bg-primary text-white">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-4">
+              <LuGraduationCap
+                className="size-8 shrink-0 text-periwinkle"
+                aria-hidden="true"
+              />
+              <div className="min-w-0">
+                <p className="break-words text-xl font-bold">
                   {displayValue(student.full_name)}
-                </h2>
-                <p className="mt-1 text-sm text-muted">
+                </p>
+                <p className="mt-1 break-words text-sm text-periwinkle-light">
                   {displayValue(student.student_number)}
                 </p>
               </div>
-              <StatusChip variant={statusVariant[student.account_status]}>
-                {formatStatus(student.account_status)}
-              </StatusChip>
             </div>
+            <StatusChip variant={statusVariant[student.account_status]}>
+              {formatStatus(student.account_status)}
+            </StatusChip>
+          </div>
+        </Card>
 
-            <dl className="mt-7 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-              <DetailItem label="Email">
-                {displayValue(student.email)}
-              </DetailItem>
-              <DetailItem label="Phone">
-                {displayValue(student.phone)}
-              </DetailItem>
-              <DetailItem label="Course">
-                {displayValue(student.course)}
-              </DetailItem>
-              <DetailItem label="Year of study">
-                {displayValue(student.year_of_study)}
-              </DetailItem>
-              <DetailItem label="Emergency contact">
-                {displayValue(student.emergency_contact_name)}
-              </DetailItem>
-              <DetailItem label="Emergency phone">
-                {displayValue(student.emergency_contact_phone)}
-              </DetailItem>
-              <DetailItem label="Registered">
-                {formatDate(student.account_created_at)}
-              </DetailItem>
-              <DetailItem label="Last login">
-                {formatDate(student.last_login_at, true)}
-              </DetailItem>
-            </dl>
+        {isEditingAccount ? (
+          <Card>
+            <h2 className="text-lg font-bold text-text">
+              Edit student information
+            </h2>
+            <p className="mt-1 text-sm text-muted">
+              Account status and sign-in settings are managed separately.
+            </p>
+            <div className="mt-6">
+              <StudentAccountForm
+                initialValues={student}
+                onCancel={() => setIsEditingAccount(false)}
+                onSubmit={submitStudentUpdate}
+                submitLabel="Save changes"
+              />
+            </div>
           </Card>
+        ) : (
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(18rem,0.75fr)]">
+            <Card>
+              <h2 className="text-lg font-bold text-text">
+                Personal information
+              </h2>
+              <dl className="mt-6 grid gap-6 sm:grid-cols-2">
+                <DetailItem label="Phone">
+                  {displayValue(student.phone)}
+                </DetailItem>
+                <DetailItem label="Course">
+                  {displayValue(student.course)}
+                </DetailItem>
+                <DetailItem label="Year of study">
+                  {displayValue(student.year_of_study)}
+                </DetailItem>
+                <DetailItem label="Emergency contact">
+                  {displayValue(student.emergency_contact_name)}
+                </DetailItem>
+                <DetailItem label="Emergency phone">
+                  {displayValue(student.emergency_contact_phone)}
+                </DetailItem>
+              </dl>
+            </Card>
+
+            <Card>
+              <h2 className="text-lg font-bold text-text">
+                Account information
+              </h2>
+              <dl className="mt-6 space-y-5">
+                <DetailItem label="Email">
+                  {displayValue(student.email)}
+                </DetailItem>
+                <DetailItem label="Registered">
+                  {formatDate(student.account_created_at)}
+                </DetailItem>
+                <DetailItem label="Last login">
+                  {formatDate(student.last_login_at, true)}
+                </DetailItem>
+                <DetailItem label="Role">Student</DetailItem>
+              </dl>
+            </Card>
+          </div>
         )}
 
         <Card>
           <div className="flex items-start gap-3">
-            <span className="grid size-10 shrink-0 place-items-center rounded-card bg-primary-soft text-primary">
-              <LuShieldCheck aria-hidden="true" className="size-5" />
-            </span>
+            <LuShieldCheck
+              aria-hidden="true"
+              className="mt-0.5 size-5 shrink-0 text-primary"
+            />
             <div>
               <h2 className="text-lg font-bold text-text">Account status</h2>
               <p className="mt-1 text-sm text-muted">
-                Status changes affect whether this student can log in.
+                Status controls whether this student can sign in.
               </p>
             </div>
           </div>
@@ -364,7 +389,7 @@ export function AdminStudentDetailPage() {
                     Student account status
                   </label>
                   <select
-                    className="min-h-11 w-full rounded-card border border-border bg-card px-3.5 py-2.5 text-sm text-text outline-none focus:border-primary focus:ring-2 focus:ring-primary-soft"
+                    className="min-h-11 w-full rounded-card border border-border bg-card px-3.5 py-2.5 text-sm text-text outline-none hover:border-periwinkle focus:border-primary focus:ring-3 focus:ring-primary-soft"
                     id="account-status"
                     onChange={(event) => {
                       setSelectedStatus(event.target.value);
@@ -390,11 +415,6 @@ export function AdminStudentDetailPage() {
             )}
           </div>
         </Card>
-
-        <Alert>
-          Room, maintenance, visitor and payment information will be available
-          after those modules are developed.
-        </Alert>
       </div>
     </PageContainer>
   );
