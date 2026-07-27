@@ -17,7 +17,7 @@ The Smart Hostel Management System is a planned web application for managing hos
 
 ## Current Project Status
 
-The project setup has been completed and merged into `develop`. The project is now in the planning stage for scope, roles, database design, API design, and permissions. Feature development has not started. No login pages, dashboards, forms, API routes, controllers, database tables, migrations, or business logic have been created.
+The project setup has been completed and merged into `develop`. The project scope and user roles have been confirmed, and system design documentation is being prepared for the database, ER diagram, API endpoints, and role permissions. Feature development has not started. No login pages, dashboards, forms, API routes, controllers, database tables, migrations, or business logic have been created.
 
 ## Feature-Based Development Timeline
 
@@ -65,7 +65,10 @@ The project must not connect to M-Pesa, Stripe, PayPal, banks, cards, or any ext
 ├── deployment/
 │   └── aws/
 ├── docs/
-│   └── project-scope-and-roles.md
+│   ├── api-endpoint-design.md
+│   ├── database-and-er-design.md
+│   ├── project-scope-and-roles.md
+│   └── role-permission-matrix.md
 ├── docker/
 │   ├── backend/
 │   └── frontend/
@@ -121,6 +124,9 @@ Project setup has been merged into `develop`. New work should use feature branch
 ## Planning Documents
 
 - [Project Scope and User Roles](docs/project-scope-and-roles.md)
+- [Database and ER Design](docs/database-and-er-design.md)
+- [API Endpoint Design](docs/api-endpoint-design.md)
+- [Role Permission Matrix](docs/role-permission-matrix.md)
 
 ## Group Members
 
