@@ -9,6 +9,8 @@ export const getRooms = async (params = {}) => {
       limit: params.limit,
       search: params.search || undefined,
       status: params.status || undefined,
+      student_id: params.student_id || undefined,
+      room_id: params.room_id || undefined,
     },
   });
   return data(response);

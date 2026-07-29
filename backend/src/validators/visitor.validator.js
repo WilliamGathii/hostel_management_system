@@ -19,6 +19,7 @@ const visitorListValidation = [
   query('approval_status').optional().isIn(APPROVAL_STATUSES),
   query('verification_status').optional().isIn(VERIFICATION_STATUSES),
   query('visit_date').optional().isISO8601({ strict: true }),
+  query('student_id').optional().isUUID(),
 ];
 const visitorCreateValidation = [
   body().custom(

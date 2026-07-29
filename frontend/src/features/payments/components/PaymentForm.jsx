@@ -12,7 +12,13 @@ import {
   getMyAllocation,
 } from '../../rooms/services/room.service';
 
-export function PaymentForm({ isAdmin, onCancel, onSubmit }) {
+export function PaymentForm({
+  contextAllocation = null,
+  contextStudent = null,
+  isAdmin,
+  onCancel,
+  onSubmit,
+}) {
   const [allocationOptions, setAllocationOptions] = useState([]);
   const [allocationError, setAllocationError] = useState('');
   const [submitError, setSubmitError] = useState('');
@@ -36,7 +42,13 @@ export function PaymentForm({ isAdmin, onCancel, onSubmit }) {
     let active = true;
     const loadAllocations = async () => {
       try {
-        if (isAdmin) {
+        if (isAdmin && contextStudent) {
+          const contextualAllocations = contextAllocation
+            ? [contextAllocation]
+            : [];
+          setAllocationOptions(contextualAllocations);
+          setValue('room_allocation_id', contextAllocation?.id || '');
+        } else if (isAdmin) {
           const result = await getAllocations({
             page: 1,
             limit: 50,
@@ -66,7 +78,7 @@ export function PaymentForm({ isAdmin, onCancel, onSubmit }) {
     return () => {
       active = false;
     };
-  }, [isAdmin, setValue]);
+  }, [contextAllocation, contextStudent, isAdmin, setValue]);
 
   const submit = async (values) => {
     setSubmitError('');
@@ -93,7 +105,29 @@ export function PaymentForm({ isAdmin, onCancel, onSubmit }) {
         <Alert variant="error">{allocationError}</Alert>
       ) : null}
 
-      {isAdmin ? (
+      {isAdmin && contextStudent ? (
+        <div className="rounded-card bg-page p-4">
+          <p className="text-xs font-semibold text-muted">Selected student</p>
+          <p className="mt-1 font-bold text-text">{contextStudent.full_name}</p>
+          <p className="mt-1 text-sm text-muted">
+            {contextStudent.student_number}
+          </p>
+          <p className="mt-3 text-xs text-information">
+            This student is locked to the current record.
+          </p>
+          <input
+            type="hidden"
+            {...register('room_allocation_id', {
+              required: 'An active room allocation is required',
+            })}
+          />
+          {errors.room_allocation_id ? (
+            <p className="mt-2 text-sm text-error" role="alert">
+              {errors.room_allocation_id.message}
+            </p>
+          ) : null}
+        </div>
+      ) : isAdmin ? (
         <SelectField
           error={errors.room_allocation_id?.message}
           label="Student allocation"
@@ -111,6 +145,13 @@ export function PaymentForm({ isAdmin, onCancel, onSubmit }) {
             </option>
           ))}
         </SelectField>
+      ) : null}
+
+      {isAdmin && contextStudent && !contextAllocation ? (
+        <Alert variant="error">
+          This student needs an active room allocation before a simulated
+          payment can be recorded.
+        </Alert>
       ) : null}
 
       <div className="grid gap-5 sm:grid-cols-2">
@@ -181,7 +222,11 @@ export function PaymentForm({ isAdmin, onCancel, onSubmit }) {
         <Button onClick={onCancel} variant="secondary">
           Cancel
         </Button>
-        <Button isLoading={isSubmitting} type="submit">
+        <Button
+          disabled={Boolean(isAdmin && contextStudent && !contextAllocation)}
+          isLoading={isSubmitting}
+          type="submit"
+        >
           <LuReceiptText aria-hidden="true" className="size-4" />
           Record Simulated Payment
         </Button>

@@ -5,6 +5,7 @@ import {
   LuSearch,
   LuShieldAlert,
 } from 'react-icons/lu';
+import { Link } from 'react-router-dom';
 
 import { Button } from '../../../components/common/Button';
 import { Card } from '../../../components/common/Card';
@@ -230,7 +231,37 @@ export function PaymentPage() {
                     {formatDateTime(selectedPayment.created_at)}
                   </dd>
                 </div>
+                {isAdmin ? (
+                  <>
+                    <div>
+                      <dt className="text-muted">Student number</dt>
+                      <dd className="font-semibold text-text">
+                        {selectedPayment.student_number}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted">Recorded by</dt>
+                      <dd className="font-semibold text-text">
+                        {selectedPayment.recorded_by_name || 'Not specified'}
+                      </dd>
+                    </div>
+                  </>
+                ) : null}
+                <div className="sm:col-span-2">
+                  <dt className="text-muted">Notes</dt>
+                  <dd className="font-semibold text-text">
+                    {selectedPayment.notes || 'No notes'}
+                  </dd>
+                </div>
               </dl>
+              {isAdmin ? (
+                <Link
+                  className="mt-5 inline-flex min-h-11 items-center rounded-card bg-periwinkle-light px-4 py-2.5 text-sm font-semibold text-primary hover:bg-periwinkle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  to={`/admin/students/${selectedPayment.student_id}?tab=payments`}
+                >
+                  View Student
+                </Link>
+              ) : null}
             </div>
             <div className="grid gap-3 sm:grid-cols-[14rem_auto] sm:items-end">
               {isAdmin &&
@@ -296,7 +327,7 @@ export function PaymentPage() {
                 className="min-h-11 w-full rounded-card border border-border bg-card px-3.5 text-sm outline-none focus:border-primary focus:ring-3 focus:ring-primary-soft"
                 id="payment-search"
                 onChange={(event) => setSearchInput(event.target.value)}
-                placeholder="Student or reference"
+                placeholder="Name, number, email or reference"
                 type="search"
                 value={searchInput}
               />
@@ -455,13 +486,23 @@ export function PaymentPage() {
                           </StatusChip>
                         </td>
                         <td className="px-4 py-4 text-right">
-                          <button
-                            className="font-semibold text-primary hover:underline focus-visible:outline-primary"
-                            onClick={() => openReview(payment)}
-                            type="button"
-                          >
-                            View details
-                          </button>
+                          <div className="flex flex-wrap justify-end gap-x-3">
+                            <button
+                              className="min-h-11 font-semibold text-primary hover:underline focus-visible:outline-primary"
+                              onClick={() => openReview(payment)}
+                              type="button"
+                            >
+                              View details
+                            </button>
+                            {isAdmin ? (
+                              <Link
+                                className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline focus-visible:outline-primary"
+                                to={`/admin/students/${payment.student_id}?tab=payments`}
+                              >
+                                View student
+                              </Link>
+                            ) : null}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -512,13 +553,27 @@ export function PaymentPage() {
                         </dd>
                       </div>
                     </dl>
-                    <Button
-                      className="mt-4 w-full"
-                      onClick={() => openReview(payment)}
-                      variant="secondary"
+                    <div
+                      className={`mt-4 grid gap-2 ${
+                        isAdmin ? 'grid-cols-2' : ''
+                      }`}
                     >
-                      View Details
-                    </Button>
+                      <Button
+                        className="w-full"
+                        onClick={() => openReview(payment)}
+                        variant="secondary"
+                      >
+                        View details
+                      </Button>
+                      {isAdmin ? (
+                        <Link
+                          className="inline-flex min-h-11 items-center justify-center rounded-card bg-periwinkle-light px-3 py-2.5 text-center text-sm font-semibold text-primary hover:bg-periwinkle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                          to={`/admin/students/${payment.student_id}?tab=payments`}
+                        >
+                          View student
+                        </Link>
+                      ) : null}
+                    </div>
                   </article>
                 ))}
               </div>

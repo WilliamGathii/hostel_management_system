@@ -37,20 +37,28 @@ const simulatedResult = (result) => ({
 const listMyPayments = async (user, options) => {
   requireRole(user, ['student']);
   const query = { ...options, studentUserId: user.id };
-  const payments = await paymentModel.listPayments(query);
-  const total = await paymentModel.countPayments(query);
+  const [payments, total, summary] = await Promise.all([
+    paymentModel.listPayments(query),
+    paymentModel.countPayments(query),
+    paymentModel.summarizePayments(query),
+  ]);
   return simulatedResult({
     payments,
+    summary,
     pagination: pagination(options, total),
   });
 };
 
 const listPayments = async (user, options) => {
   requireRole(user, ['admin']);
-  const payments = await paymentModel.listPayments(options);
-  const total = await paymentModel.countPayments(options);
+  const [payments, total, summary] = await Promise.all([
+    paymentModel.listPayments(options),
+    paymentModel.countPayments(options),
+    paymentModel.summarizePayments(options),
+  ]);
   return simulatedResult({
     payments,
+    summary,
     pagination: pagination(options, total),
   });
 };

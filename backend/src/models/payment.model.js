@@ -115,7 +115,7 @@ const buildFilters = ({
     add(
       `%${search}%`,
       (position) =>
-        `(student_user.full_name ILIKE $${position} OR sp.student_number ILIKE $${position} OR p.transaction_reference ILIKE $${position})`
+        `(student_user.full_name ILIKE $${position} OR student_user.email ILIKE $${position} OR sp.student_number ILIKE $${position} OR p.transaction_reference ILIKE $${position})`
     );
   }
   if (status) {
@@ -168,6 +168,44 @@ const countPayments = async (options, database = getDatabase()) => {
   return result.rows[0]?.total || 0;
 };
 
+const summarizePayments = async (options, database = getDatabase()) => {
+  const { whereClause, values } = buildFilters(options);
+  const result = await database.query(
+    `SELECT
+       COUNT(*)::integer AS total_records,
+       COALESCE(
+         SUM(p.amount) FILTER (WHERE p.payment_status = 'paid'),
+         0
+       )::numeric(12, 2) AS total_paid_amount,
+       (
+         ARRAY_AGG(
+           p.payment_date
+           ORDER BY p.payment_date DESC, p.created_at DESC
+         )
+       )[1] AS latest_payment_date,
+       (
+         ARRAY_AGG(
+           p.payment_status
+           ORDER BY p.payment_date DESC, p.created_at DESC
+         )
+       )[1] AS latest_payment_status
+     FROM payments p
+     INNER JOIN student_profiles sp ON sp.id = p.student_id
+     INNER JOIN users student_user ON student_user.id = sp.user_id
+     LEFT JOIN room_allocations ra ON ra.id = p.room_allocation_id
+     ${whereClause}`,
+    values
+  );
+  return (
+    result.rows[0] || {
+      total_records: 0,
+      total_paid_amount: '0.00',
+      latest_payment_date: null,
+      latest_payment_status: null,
+    }
+  );
+};
+
 const createPayment = async (data, database = getDatabase()) => {
   const result = await database.query(
     `INSERT INTO payments (
@@ -210,6 +248,7 @@ module.exports = {
   findPaymentById,
   listPayments,
   countPayments,
+  summarizePayments,
   createPayment,
   updatePaymentStatus,
 };
