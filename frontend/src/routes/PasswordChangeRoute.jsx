@@ -1,10 +1,9 @@
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 
 import { useAuth } from '../hooks/useAuth';
 import { getRoleHomePath } from '../utils/role-home';
 
-export function PublicOnlyRoute({ children }) {
-  const location = useLocation();
+export function PasswordChangeRoute({ children }) {
   const { user, isAuthenticated, isLoading, isPasswordChangeRequired } =
     useAuth();
 
@@ -19,12 +18,21 @@ export function PublicOnlyRoute({ children }) {
     );
   }
 
-  if (isPasswordChangeRequired && !location.state?.passwordChangeFinished) {
-    return <Navigate to="/change-password" replace />;
-  }
-
   if (isAuthenticated) {
     return <Navigate to={getRoleHomePath(user.role)} replace />;
+  }
+
+  if (!isPasswordChangeRequired) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{
+          notice: 'Please log in again to change your temporary password.',
+          noticeVariant: 'information',
+        }}
+      />
+    );
   }
 
   return children || <Outlet />;

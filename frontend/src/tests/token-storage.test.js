@@ -2,9 +2,13 @@ import { describe, expect, test } from 'vitest';
 
 import {
   ACCESS_TOKEN_KEY,
+  PASSWORD_CHANGE_TOKEN_KEY,
   getAccessToken,
+  getPasswordChangeToken,
   removeAccessToken,
+  removePasswordChangeToken,
   saveAccessToken,
+  savePasswordChangeToken,
 } from '../utils/token-storage';
 
 describe('token storage', () => {
@@ -19,6 +23,19 @@ describe('token storage', () => {
     removeAccessToken();
 
     expect(getAccessToken()).toBeNull();
+  });
+
+  test('stores and removes the restricted token separately', () => {
+    savePasswordChangeToken('restricted-test-token');
+
+    expect(getPasswordChangeToken()).toBe('restricted-test-token');
+    expect(getAccessToken()).toBeNull();
+    expect(window.sessionStorage.getItem(PASSWORD_CHANGE_TOKEN_KEY)).toBe(
+      'restricted-test-token'
+    );
+
+    removePasswordChangeToken();
+    expect(getPasswordChangeToken()).toBeNull();
   });
 
   test('ignores an empty token', () => {

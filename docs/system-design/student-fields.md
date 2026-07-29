@@ -66,7 +66,8 @@ and approved profile fields. Admins cannot edit role, existing password
 information, IDs, or timestamps. Account status uses its separate endpoint.
 
 The creation form accepts a temporary password, but the API never returns that
-password or its hash. Student records are not permanently deleted.
+password or its hash. The account requires a new password at first login.
+Student records are not permanently deleted.
 
 ## Database Readiness
 

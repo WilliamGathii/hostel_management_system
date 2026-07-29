@@ -207,6 +207,7 @@ describe('student service', () => {
         passwordHash: 'hashed-password',
         role: 'student',
         accountStatus: 'active',
+        mustChangePassword: true,
       },
       profile: {
         studentNumber: 'STU001',

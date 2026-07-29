@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
@@ -11,7 +11,7 @@ import { getRoleHomePath } from '../../../utils/role-home';
 
 export function LoginPage() {
   const [submitError, setSubmitError] = useState('');
-  const { login } = useAuth();
+  const { clearPasswordChangeSession, login } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const {
@@ -25,14 +25,26 @@ export function LoginPage() {
     },
   });
 
+  useEffect(() => {
+    if (location.state?.passwordChangeFinished) {
+      clearPasswordChangeSession();
+    }
+  }, [clearPasswordChangeSession, location.state?.passwordChangeFinished]);
+
   const onSubmit = async (values) => {
     setSubmitError('');
 
     try {
-      const user = await login(values);
+      const result = await login(values);
+
+      if (result.passwordChangeRequired) {
+        navigate('/change-password', { replace: true });
+        return;
+      }
+
       const requestedPath = location.state?.from?.pathname;
 
-      navigate(requestedPath || getRoleHomePath(user.role), {
+      navigate(requestedPath || getRoleHomePath(result.role), {
         replace: true,
       });
     } catch (error) {
@@ -61,7 +73,9 @@ export function LoginPage() {
       ) : null}
       {location.state?.notice ? (
         <div className="mt-5">
-          <Alert variant="success">{location.state.notice}</Alert>
+          <Alert variant={location.state.noticeVariant || 'success'}>
+            {location.state.notice}
+          </Alert>
         </div>
       ) : null}
 
