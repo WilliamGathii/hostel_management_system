@@ -74,9 +74,7 @@ describe('payment and report routes', () => {
     expect(
       await screen.findByText('No simulated payment records have been added.')
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(/No money is transferred/)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/No money is transferred/)).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: /M-Pesa|Stripe|PayPal|card/i })
     ).not.toBeInTheDocument();
@@ -128,8 +126,10 @@ describe('payment and report routes', () => {
       payments: [
         {
           id: 'payment-1',
+          student_id: '11111111-1111-4111-8111-111111111111',
           student_name: 'Test Student',
           student_number: 'STU-TEST',
+          student_email: 'student@example.com',
           amount: '1500.00',
           payment_method: 'Cash',
           transaction_reference: 'SIM-001',
@@ -150,15 +150,27 @@ describe('payment and report routes', () => {
     });
 
     expect((await screen.findAllByText('SIM-001')).length).toBeGreaterThan(0);
+    await user.type(
+      screen.getByRole('searchbox', { name: 'Search payments' }),
+      'student@example.com'
+    );
     await user.type(screen.getByLabelText('From'), '2026-07-01');
     await user.type(screen.getByLabelText('To'), '2026-07-31');
     await user.click(screen.getByRole('button', { name: 'Apply' }));
     expect(getPayments).toHaveBeenLastCalledWith(
       expect.objectContaining({
+        search: 'student@example.com',
         date_from: '2026-07-01',
         date_to: '2026-07-31',
       })
     );
+    expect(
+      screen.getAllByRole('link', { name: /view student/i })[0]
+    ).toHaveAttribute(
+      'href',
+      '/admin/students/11111111-1111-4111-8111-111111111111?tab=payments'
+    );
+    expect(screen.queryByText(/balance due/i)).not.toBeInTheDocument();
 
     await user.click(
       screen.getAllByRole('button', { name: /View details/i })[0]

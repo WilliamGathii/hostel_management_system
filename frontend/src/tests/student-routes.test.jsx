@@ -10,12 +10,29 @@ vi.mock('../features/students/services/student.service', () => ({
   updateMyStudentProfile: vi.fn(),
   updateStudentStatus: vi.fn(),
 }));
+vi.mock('../features/rooms/services/room.service', () => ({
+  getAllocations: vi.fn(),
+}));
+vi.mock('../features/payments/services/payment.service', () => ({
+  createPayment: vi.fn(),
+  getPayments: vi.fn(),
+}));
+vi.mock('../features/maintenance/services/maintenance.service', () => ({
+  getMaintenanceRequests: vi.fn(),
+}));
+vi.mock('../features/visitors/services/visitor.service', () => ({
+  getVisitors: vi.fn(),
+}));
 
 import {
   getMyStudentProfile,
   getStudentById,
   getStudents,
 } from '../features/students/services/student.service';
+import { getAllocations } from '../features/rooms/services/room.service';
+import { getPayments } from '../features/payments/services/payment.service';
+import { getMaintenanceRequests } from '../features/maintenance/services/maintenance.service';
+import { getVisitors } from '../features/visitors/services/visitor.service';
 import { AppRouter } from '../routes/AppRouter';
 import { createAuthValue, renderWithAuth } from './test-utils';
 
@@ -50,6 +67,17 @@ describe('Student feature routing', () => {
       students: [student],
       pagination: { page: 1, limit: 10, total: 1, totalPages: 1 },
     });
+    getAllocations.mockResolvedValue({ allocations: [], pagination: {} });
+    getPayments.mockResolvedValue({
+      payments: [],
+      summary: {},
+      pagination: {},
+    });
+    getMaintenanceRequests.mockResolvedValue({
+      maintenance_requests: [],
+      pagination: {},
+    });
+    getVisitors.mockResolvedValue({ visitors: [], pagination: {} });
   });
 
   test('does not expose public Student registration', () => {

@@ -5,6 +5,7 @@ jest.mock('../../src/models/payment.model', () => ({
   findPaymentById: jest.fn(),
   listPayments: jest.fn(),
   countPayments: jest.fn(),
+  summarizePayments: jest.fn(),
   createPayment: jest.fn(),
   updatePaymentStatus: jest.fn(),
 }));
@@ -47,6 +48,12 @@ describe('payment service', () => {
     );
     paymentModel.listPayments.mockResolvedValue([payment]);
     paymentModel.countPayments.mockResolvedValue(1);
+    paymentModel.summarizePayments.mockResolvedValue({
+      total_records: 1,
+      total_paid_amount: '0.00',
+      latest_payment_date: '2026-07-29',
+      latest_payment_status: 'pending',
+    });
   });
 
   test('Student lists only their own payment records', async () => {
@@ -65,6 +72,7 @@ describe('payment service', () => {
   test('Admin payment lists keep pagination and filter options', async () => {
     const filtered = {
       ...options,
+      studentId: 'student-profile',
       status: 'paid',
       dateFrom: new Date('2026-07-01'),
       dateTo: new Date('2026-07-31'),
@@ -73,10 +81,15 @@ describe('payment service', () => {
       paymentService.listPayments(users.admin, filtered)
     ).resolves.toMatchObject({
       is_simulated: true,
+      summary: {
+        total_records: 1,
+        total_paid_amount: '0.00',
+      },
       pagination: { total: 1, totalPages: 1 },
     });
     expect(paymentModel.listPayments).toHaveBeenCalledWith(filtered);
     expect(paymentModel.countPayments).toHaveBeenCalledWith(filtered);
+    expect(paymentModel.summarizePayments).toHaveBeenCalledWith(filtered);
   });
 
   test('Student cannot view another Student payment record', async () => {

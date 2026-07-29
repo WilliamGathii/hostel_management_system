@@ -28,6 +28,7 @@ const { signAuthToken } = require('../../src/utils/jwt');
 
 const paymentId = '11111111-1111-4111-8111-111111111111';
 const allocationId = '22222222-2222-4222-8222-222222222222';
+const studentId = '33333333-3333-4333-8333-333333333333';
 const users = {
   student: {
     id: 'payment-student-user',
@@ -52,6 +53,7 @@ const users = {
 };
 const payment = {
   id: paymentId,
+  student_id: studentId,
   amount: '1500.00',
   payment_status: 'pending',
 };
@@ -186,6 +188,27 @@ describe('payment and report routes', () => {
     ).toBe(200);
   });
 
+  test('Admin can filter payment records by Student identifier', async () => {
+    const response = await request(app)
+      .get(`/api/v1/payments?student_id=${studentId}`)
+      .set('Authorization', authorization(users.admin));
+
+    expect(response.status).toBe(200);
+    expect(paymentService.listPayments).toHaveBeenCalledWith(
+      expect.objectContaining({ role: 'admin' }),
+      expect.objectContaining({ studentId })
+    );
+  });
+
+  test('Payment Student filter validates identifiers', async () => {
+    const response = await request(app)
+      .get('/api/v1/payments?student_id=not-a-uuid')
+      .set('Authorization', authorization(users.admin));
+
+    expect(response.status).toBe(422);
+    expect(paymentService.listPayments).not.toHaveBeenCalled();
+  });
+
   test('Payment detail responses contain no credential fields', async () => {
     const response = await request(app)
       .get(`/api/v1/payments/${paymentId}`)
@@ -194,6 +217,7 @@ describe('payment and report routes', () => {
     expect(response.body.data.payment).not.toHaveProperty('password_hash');
     expect(response.body.data.payment).not.toHaveProperty('card_number');
     expect(response.body.data.payment).not.toHaveProperty('provider_token');
+    expect(response.body.data.payment.student_id).toBe(studentId);
   });
 
   test('Payment status validation rejects unsupported values', async () => {
@@ -212,10 +236,10 @@ describe('payment and report routes', () => {
   });
 
   test.each([users.maintenance, users.security])(
-    '$role cannot access payment records',
+    '$role cannot use the Admin Student payment filter',
     async (user) => {
       const response = await request(app)
-        .get('/api/v1/payments')
+        .get(`/api/v1/payments?student_id=${studentId}`)
         .set('Authorization', authorization(user));
       expect(response.status).toBe(403);
     }
