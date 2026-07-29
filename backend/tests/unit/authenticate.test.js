@@ -14,6 +14,8 @@ const activeUser = {
   email: 'student@example.com',
   role: 'student',
   account_status: 'active',
+  must_change_password: false,
+  token_version: 0,
 };
 
 const createRequest = (authorization) => ({
@@ -83,6 +85,37 @@ describe('authentication middleware', () => {
     await authenticate(createRequest(`Bearer ${token}`), {}, next);
 
     expect(next.mock.calls[0][0]).toMatchObject({ statusCode: 401 });
+  });
+
+  test('rejects an older token after the credential version changes', async () => {
+    const token = signAuthToken(activeUser);
+    const next = jest.fn();
+
+    userModel.findUserById.mockResolvedValue({
+      ...activeUser,
+      token_version: 1,
+    });
+
+    await authenticate(createRequest(`Bearer ${token}`), {}, next);
+
+    expect(next.mock.calls[0][0]).toMatchObject({ statusCode: 401 });
+  });
+
+  test('rejects normal access while a password change is required', async () => {
+    const token = signAuthToken(activeUser);
+    const next = jest.fn();
+
+    userModel.findUserById.mockResolvedValue({
+      ...activeUser,
+      must_change_password: true,
+    });
+
+    await authenticate(createRequest(`Bearer ${token}`), {}, next);
+
+    expect(next.mock.calls[0][0]).toMatchObject({
+      statusCode: 401,
+      message: 'Password change is required',
+    });
   });
 
   test.each(['suspended', 'inactive'])(

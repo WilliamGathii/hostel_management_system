@@ -230,6 +230,7 @@ const createStudent = async (user, studentData) => {
         passwordHash,
         role: STUDENT_ROLE,
         accountStatus: 'active',
+        mustChangePassword: true,
       },
       profile: {
         studentNumber: normalizedData.student_number,

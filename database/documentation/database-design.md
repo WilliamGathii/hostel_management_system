@@ -50,6 +50,9 @@ Important fields:
 - `password_hash`
 - `role`
 - `account_status`
+- `must_change_password`
+- `password_changed_at`
+- `token_version`
 - `last_login_at`
 - `created_at`
 - `updated_at`
@@ -65,6 +68,8 @@ Required fields:
 - `password_hash`
 - `role`
 - `account_status`
+- `must_change_password`
+- `token_version`
 
 Unique fields:
 
@@ -93,6 +98,7 @@ Relationships:
 
 Timestamps:
 
+- `password_changed_at`
 - `created_at`
 - `updated_at`
 

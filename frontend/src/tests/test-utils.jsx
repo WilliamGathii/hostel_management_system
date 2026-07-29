@@ -7,11 +7,14 @@ import { AuthContext } from '../context/auth-context';
 export const createAuthValue = (overrides = {}) => ({
   user: null,
   isAuthenticated: false,
+  isPasswordChangeRequired: false,
   isLoading: false,
   authError: null,
   login: vi.fn(),
   logout: vi.fn(),
   refreshUser: vi.fn(),
+  changeRequiredPassword: vi.fn(),
+  clearPasswordChangeSession: vi.fn(),
   ...overrides,
 });
 

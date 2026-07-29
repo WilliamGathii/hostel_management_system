@@ -13,11 +13,15 @@ const RouteLoader = () => (
 );
 
 export function ProtectedRoute({ children }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, isPasswordChangeRequired } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
     return <RouteLoader />;
+  }
+
+  if (isPasswordChangeRequired) {
+    return <Navigate to="/change-password" replace />;
   }
 
   if (!isAuthenticated) {

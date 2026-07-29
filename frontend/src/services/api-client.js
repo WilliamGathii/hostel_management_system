@@ -23,8 +23,12 @@ apiClient.interceptors.request.use((config) => {
   }
 
   const token = getAccessToken();
+  const hasAuthorizationHeader =
+    typeof config.headers?.get === 'function'
+      ? config.headers.get('Authorization')
+      : config.headers?.Authorization;
 
-  if (token) {
+  if (token && !hasAuthorizationHeader) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 

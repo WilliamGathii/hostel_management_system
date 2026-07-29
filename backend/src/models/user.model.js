@@ -8,6 +8,9 @@ const SAFE_USER_COLUMNS = `
   phone,
   role,
   account_status,
+  must_change_password,
+  password_changed_at,
+  token_version,
   last_login_at,
   created_at,
   updated_at
@@ -55,7 +58,15 @@ const findUserById = async (userId, database = getDatabase()) => {
 };
 
 const createUser = async (
-  { fullName, email, phone, passwordHash, role, accountStatus = 'active' },
+  {
+    fullName,
+    email,
+    phone,
+    passwordHash,
+    role,
+    accountStatus = 'active',
+    mustChangePassword = false,
+  },
   database = getDatabase()
 ) => {
   const result = await database.query(
@@ -65,11 +76,20 @@ const createUser = async (
        phone,
        password_hash,
        role,
-       account_status
+       account_status,
+       must_change_password
      )
-     VALUES ($1, $2, $3, $4, $5, $6)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING ${SAFE_USER_COLUMNS}`,
-    [fullName, email, phone || null, passwordHash, role, accountStatus]
+    [
+      fullName,
+      email,
+      phone || null,
+      passwordHash,
+      role,
+      accountStatus,
+      mustChangePassword,
+    ]
   );
 
   return result.rows[0];
@@ -214,6 +234,44 @@ const updateLastLoginAt = async (userId, database = getDatabase()) => {
   return result.rows[0]?.last_login_at || null;
 };
 
+const findUserByIdWithPasswordForUpdate = async (
+  userId,
+  database = getDatabase()
+) => {
+  const result = await database.query(
+    `SELECT ${SAFE_USER_COLUMNS}, password_hash
+     FROM users
+     WHERE id = $1
+     FOR UPDATE`,
+    [userId]
+  );
+
+  return result.rows[0] || null;
+};
+
+const completeRequiredPasswordChange = async (
+  userId,
+  passwordHash,
+  expectedTokenVersion,
+  database = getDatabase()
+) => {
+  const result = await database.query(
+    `UPDATE users
+     SET password_hash = $1,
+         must_change_password = false,
+         password_changed_at = CURRENT_TIMESTAMP,
+         token_version = token_version + 1,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE id = $2
+       AND must_change_password = true
+       AND token_version = $3
+     RETURNING ${SAFE_USER_COLUMNS}`,
+    [passwordHash, userId, expectedTokenVersion]
+  );
+
+  return result.rows[0] || null;
+};
+
 const emailExists = async (email, database = getDatabase()) => {
   const result = await database.query(
     'SELECT EXISTS(SELECT 1 FROM users WHERE email = $1) AS exists',
@@ -300,9 +358,11 @@ const createStaffAccount = async ({ user, profile }) =>
   });
 
 module.exports = {
+  completeRequiredPasswordChange,
   findUserByEmail,
   findUserByEmailWithPassword,
   findUserById,
+  findUserByIdWithPasswordForUpdate,
   createUser,
   createStudentProfile,
   createStaffProfile,
@@ -315,4 +375,5 @@ module.exports = {
   staffNumberExists,
   createStudentAccount,
   createStaffAccount,
+  runInTransaction,
 };

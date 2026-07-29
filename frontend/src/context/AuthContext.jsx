@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import * as authService from '../features/authentication/services/auth.service';
-import { getAccessToken, removeAccessToken } from '../utils/token-storage';
+import {
+  getAccessToken,
+  getPasswordChangeToken,
+  removeAccessToken,
+  removePasswordChangeToken,
+} from '../utils/token-storage';
 import { AuthContext } from './auth-context';
 
 const combineAccount = (account) => {
@@ -17,18 +22,39 @@ const combineAccount = (account) => {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [accessToken, setAccessToken] = useState(() => getAccessToken());
+  const [passwordChangeToken, setPasswordChangeToken] = useState(() =>
+    getPasswordChangeToken()
+  );
+  const [accessToken, setAccessToken] = useState(() =>
+    getPasswordChangeToken() ? null : getAccessToken()
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [authError, setAuthError] = useState(null);
 
   const clearSession = useCallback(() => {
     removeAccessToken();
+    removePasswordChangeToken();
     setAccessToken(null);
+    setPasswordChangeToken(null);
     setUser(null);
+  }, []);
+
+  const clearPasswordChangeSession = useCallback(() => {
+    removePasswordChangeToken();
+    setPasswordChangeToken(null);
   }, []);
 
   const refreshUser = useCallback(async () => {
     const storedToken = getAccessToken();
+    const storedPasswordChangeToken = getPasswordChangeToken();
+
+    if (storedPasswordChangeToken) {
+      removeAccessToken();
+      setAccessToken(null);
+      setPasswordChangeToken(storedPasswordChangeToken);
+      setUser(null);
+      return null;
+    }
 
     if (!storedToken) {
       clearSession();
@@ -54,6 +80,20 @@ export function AuthProvider({ children }) {
     let isActive = true;
 
     const loadSession = async () => {
+      const storedPasswordChangeToken = getPasswordChangeToken();
+
+      if (storedPasswordChangeToken) {
+        removeAccessToken();
+
+        if (isActive) {
+          setAccessToken(null);
+          setPasswordChangeToken(storedPasswordChangeToken);
+          setUser(null);
+          setIsLoading(false);
+        }
+        return;
+      }
+
       if (!getAccessToken()) {
         if (isActive) {
           setIsLoading(false);
@@ -93,11 +133,21 @@ export function AuthProvider({ children }) {
       setAuthError(null);
 
       try {
-        await authService.login(credentials);
+        const loginResult = await authService.login(credentials);
+
+        if (loginResult.passwordChangeRequired) {
+          removeAccessToken();
+          setAccessToken(null);
+          setPasswordChangeToken(getPasswordChangeToken());
+          setUser(null);
+          return loginResult;
+        }
+
         const account = await authService.getCurrentUser();
         const currentUser = combineAccount(account);
 
         setAccessToken(getAccessToken());
+        setPasswordChangeToken(null);
         setUser(currentUser);
         return currentUser;
       } catch (error) {
@@ -108,6 +158,18 @@ export function AuthProvider({ children }) {
     },
     [clearSession]
   );
+
+  const changeRequiredPassword = useCallback(async (passwords) => {
+    setAuthError(null);
+
+    try {
+      const result = await authService.changeRequiredPassword(passwords);
+      return result;
+    } catch (error) {
+      setAuthError(error);
+      throw error;
+    }
+  }, []);
 
   const logout = useCallback(async () => {
     setAuthError(null);
@@ -122,14 +184,30 @@ export function AuthProvider({ children }) {
   const value = useMemo(
     () => ({
       user,
-      isAuthenticated: Boolean(user && accessToken),
+      isAuthenticated: Boolean(user && accessToken && !passwordChangeToken),
+      isPasswordChangeRequired: Boolean(
+        passwordChangeToken && !accessToken && !user
+      ),
       isLoading,
       authError,
+      changeRequiredPassword,
+      clearPasswordChangeSession,
       login,
       logout,
       refreshUser,
     }),
-    [accessToken, authError, isLoading, login, logout, refreshUser, user]
+    [
+      accessToken,
+      authError,
+      changeRequiredPassword,
+      clearPasswordChangeSession,
+      isLoading,
+      login,
+      logout,
+      passwordChangeToken,
+      refreshUser,
+      user,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

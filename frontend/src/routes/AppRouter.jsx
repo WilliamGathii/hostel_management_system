@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { LoginPage } from '../features/authentication/pages/LoginPage';
+import { ChangePasswordPage } from '../features/authentication/pages/ChangePasswordPage';
 import { AnnouncementPage } from '../features/communications/pages/AnnouncementPage';
 import { NotificationPage } from '../features/communications/pages/NotificationPage';
 import { AdminDashboardPage } from '../features/dashboard/pages/AdminDashboardPage';
@@ -28,6 +29,7 @@ import { ForgotPasswordPage } from '../pages/public/ForgotPasswordPage';
 import { NotFoundPage } from '../pages/public/NotFoundPage';
 import { UnauthorizedPage } from '../pages/public/UnauthorizedPage';
 import { ProtectedRoute } from './ProtectedRoute';
+import { PasswordChangeRoute } from './PasswordChangeRoute';
 import { PublicOnlyRoute } from './PublicOnlyRoute';
 import { RoleRoute } from './RoleRoute';
 
@@ -39,6 +41,12 @@ export function AppRouter() {
   return (
     <Routes>
       <Route element={<Navigate replace to="/login" />} path="/" />
+
+      <Route element={<PasswordChangeRoute />}>
+        <Route element={<AuthLayout />}>
+          <Route element={<ChangePasswordPage />} path="/change-password" />
+        </Route>
+      </Route>
 
       <Route element={<PublicOnlyRoute />}>
         <Route element={<AuthLayout />}>
