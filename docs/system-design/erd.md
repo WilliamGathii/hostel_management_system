@@ -1,6 +1,8 @@
 # ER Diagram
 
-This document shows the planned entity relationships for the Smart Hostel Management System. It is a design document only. No SQL files, migrations, database tables, or generated database code are created from this diagram.
+This document shows the approved entity relationships for the Smart Hostel
+Management System. Migrations are maintained separately and must follow this
+design.
 
 ## Mermaid ER Diagram
 
@@ -8,6 +10,7 @@ This document shows the planned entity relationships for the Smart Hostel Manage
 erDiagram
   users ||--o| student_profiles : has
   users ||--o| staff_profiles : has
+  room_types ||--o{ rooms : defines
   student_profiles ||--o{ room_allocations : receives
   rooms ||--o{ room_allocations : contains
   users ||--o{ room_allocations : creates
@@ -64,14 +67,26 @@ erDiagram
     datetime updated_at
   }
 
+  room_types {
+    uuid id PK
+    string code UK
+    string name UK
+    decimal monthly_rate
+    int default_capacity
+    string description
+    string status
+    datetime created_at
+    datetime updated_at
+  }
+
   rooms {
     uuid id PK
-    string room_number UK
-    string room_type
+    uuid room_type_id FK
+    int floor_number
+    int room_number
+    string room_code UK
     int capacity
-    int current_occupancy
-    string status
-    string floor
+    string operational_status
     string description
     datetime created_at
     datetime updated_at
@@ -86,6 +101,7 @@ erDiagram
     date expected_end_date
     date actual_end_date
     string allocation_status
+    decimal monthly_rate_at_allocation
     string notes
     datetime created_at
     datetime updated_at
@@ -212,23 +228,24 @@ erDiagram
 
 1. One user may have one student profile.
 2. One user may have one staff profile.
-3. One student may have many room allocations over time.
-4. One room may have many room allocations over time.
-5. One Admin user may create many room allocations.
-6. One student may submit many maintenance requests.
-7. One room may have many maintenance requests.
-8. One Maintenance Staff user may be assigned many maintenance requests.
-9. One maintenance request may have many maintenance updates.
-10. One student may register many visitors.
-11. One Admin user may approve many visitors.
-12. One visitor may have one or more visitor verification records.
-13. One Security Staff user may verify many visitor entries and exits.
-14. One Admin user may create many announcements.
-15. One announcement may have many announcement recipient records.
-16. One user may receive many notifications.
-17. One student may have many simulated payment records.
-18. One room allocation may have many simulated payment records.
-19. One user may create many audit log records.
+3. One room type may define many rooms.
+4. One student may have many room allocations over time.
+5. One room may have many room allocations over time.
+6. One Admin user may create many room allocations.
+7. One student may submit many maintenance requests.
+8. One room may have many maintenance requests.
+9. One Maintenance Staff user may be assigned many maintenance requests.
+10. One maintenance request may have many maintenance updates.
+11. One student may register many visitors.
+12. One Admin user may approve many visitors.
+13. One visitor may have one or more visitor verification records.
+14. One Security Staff user may verify many visitor entries and exits.
+15. One Admin user may create many announcements.
+16. One announcement may have many announcement recipient records.
+17. One user may receive many notifications.
+18. One student may have many simulated payment records.
+19. One room allocation may have many simulated payment records.
+20. One user may create many audit log records.
 
 ## Important Design Notes
 
