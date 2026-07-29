@@ -8,6 +8,7 @@ import {
 
 import { Button } from '../../../components/common/Button';
 import { Card } from '../../../components/common/Card';
+import { ConfirmDialog } from '../../../components/common/ConfirmDialog';
 import { PageContainer } from '../../../components/common/PageContainer';
 import { PageHeader } from '../../../components/common/PageHeader';
 import { StatusChip } from '../../../components/common/StatusChip';
@@ -58,10 +59,13 @@ export function PaymentPage() {
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [nextStatus, setNextStatus] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isConfirmingUpdate, setIsConfirmingUpdate] = useState(false);
   const [updateError, setUpdateError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -76,6 +80,8 @@ export function PaymentPage() {
         limit: 20,
         search: isAdmin ? search || undefined : undefined,
         status: status || undefined,
+        date_from: isAdmin ? dateFrom || undefined : undefined,
+        date_to: isAdmin ? dateTo || undefined : undefined,
       });
       setPayments(Array.isArray(result.payments) ? result.payments : []);
       setPagination(result.pagination || {});
@@ -84,7 +90,7 @@ export function PaymentPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [isAdmin, page, search, status]);
+  }, [dateFrom, dateTo, isAdmin, page, search, status]);
 
   useEffect(() => {
     loadPayments();
@@ -115,6 +121,7 @@ export function PaymentPage() {
       });
       setSelectedPayment(null);
       setNextStatus('');
+      setIsConfirmingUpdate(false);
       await loadPayments();
     } catch (error) {
       setUpdateError(error.message || 'Payment status could not be updated.');
@@ -143,7 +150,7 @@ export function PaymentPage() {
             ? 'Record, review and track simulated hostel payments.'
             : 'Submit and review your simulated hostel payment history.'
         }
-        title="Simulated Payments"
+        title="Payment Records"
       />
 
       <Alert className="mb-6" variant="warning">
@@ -170,44 +177,89 @@ export function PaymentPage() {
         </Card>
       ) : null}
 
-      {selectedPayment && isAdmin ? (
+      {selectedPayment ? (
         <Card className="mb-6">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <p className="text-xs font-semibold text-information">
-                Payment review
+                Simulated payment details
               </p>
               <h2 className="mt-1 text-lg font-bold text-text">
-                {selectedPayment.student_name}
+                {isAdmin
+                  ? selectedPayment.student_name
+                  : selectedPayment.transaction_reference || 'Payment record'}
               </h2>
-              <p className="mt-1 text-sm text-muted">
-                {selectedPayment.transaction_reference || 'No reference'} ·{' '}
-                {formatAmount(selectedPayment.amount)}
-              </p>
+              <dl className="mt-4 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
+                <div>
+                  <dt className="text-muted">Amount</dt>
+                  <dd className="font-semibold text-text">
+                    {formatAmount(selectedPayment.amount)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted">Method</dt>
+                  <dd className="font-semibold text-text">
+                    {selectedPayment.payment_method}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted">Reference</dt>
+                  <dd className="break-all font-semibold text-text">
+                    {selectedPayment.transaction_reference || 'No reference'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted">Payment date</dt>
+                  <dd className="font-semibold text-text">
+                    {formatDate(selectedPayment.payment_date)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted">Status</dt>
+                  <dd className="mt-1">
+                    <StatusChip
+                      variant={statusVariant[selectedPayment.payment_status]}
+                    >
+                      {formatLabel(selectedPayment.payment_status)}
+                    </StatusChip>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted">Recorded</dt>
+                  <dd className="font-semibold text-text">
+                    {formatDateTime(selectedPayment.created_at)}
+                  </dd>
+                </div>
+              </dl>
             </div>
-            <div className="grid gap-3 sm:grid-cols-[14rem_auto_auto] sm:items-end">
-              <SelectField
-                label="New status"
-                name="payment-review-status"
-                onChange={(event) => setNextStatus(event.target.value)}
-                value={nextStatus}
-              >
-                <option value="">Select status</option>
-                {(transitions[selectedPayment.payment_status] || []).map(
-                  (value) => (
-                    <option key={value} value={value}>
-                      {formatLabel(value)}
-                    </option>
-                  )
-                )}
-              </SelectField>
-              <Button
-                disabled={!nextStatus}
-                isLoading={isUpdating}
-                onClick={reviewPayment}
-              >
-                Update Status
-              </Button>
+            <div className="grid gap-3 sm:grid-cols-[14rem_auto] sm:items-end">
+              {isAdmin &&
+              (transitions[selectedPayment.payment_status] || []).length > 0 ? (
+                <SelectField
+                  label="New status"
+                  name="payment-review-status"
+                  onChange={(event) => setNextStatus(event.target.value)}
+                  value={nextStatus}
+                >
+                  <option value="">Select status</option>
+                  {(transitions[selectedPayment.payment_status] || []).map(
+                    (value) => (
+                      <option key={value} value={value}>
+                        {formatLabel(value)}
+                      </option>
+                    )
+                  )}
+                </SelectField>
+              ) : null}
+              {isAdmin &&
+              (transitions[selectedPayment.payment_status] || []).length > 0 ? (
+                <Button
+                  disabled={!nextStatus}
+                  onClick={() => setIsConfirmingUpdate(true)}
+                >
+                  Update Status
+                </Button>
+              ) : null}
               <Button
                 onClick={() => setSelectedPayment(null)}
                 variant="secondary"
@@ -226,7 +278,7 @@ export function PaymentPage() {
         <form
           className={`grid gap-4 rounded-card bg-page p-4 ${
             isAdmin
-              ? 'md:grid-cols-[minmax(0,1fr)_13rem_auto]'
+              ? 'md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_11rem_11rem_11rem_auto]'
               : 'md:grid-cols-[13rem_auto]'
           }`}
           onSubmit={submitSearch}
@@ -276,6 +328,47 @@ export function PaymentPage() {
               )}
             </select>
           </div>
+          {isAdmin ? (
+            <>
+              <div>
+                <label
+                  className="mb-1.5 block text-sm font-semibold text-text"
+                  htmlFor="payment-date-from"
+                >
+                  From
+                </label>
+                <input
+                  className="min-h-11 w-full rounded-card border border-border bg-card px-3.5 text-sm outline-none focus:border-primary focus:ring-3 focus:ring-primary-soft"
+                  id="payment-date-from"
+                  onChange={(event) => {
+                    setDateFrom(event.target.value);
+                    setPage(1);
+                  }}
+                  type="date"
+                  value={dateFrom}
+                />
+              </div>
+              <div>
+                <label
+                  className="mb-1.5 block text-sm font-semibold text-text"
+                  htmlFor="payment-date-to"
+                >
+                  To
+                </label>
+                <input
+                  className="min-h-11 w-full rounded-card border border-border bg-card px-3.5 text-sm outline-none focus:border-primary focus:ring-3 focus:ring-primary-soft"
+                  id="payment-date-to"
+                  min={dateFrom || undefined}
+                  onChange={(event) => {
+                    setDateTo(event.target.value);
+                    setPage(1);
+                  }}
+                  type="date"
+                  value={dateTo}
+                />
+              </div>
+            </>
+          ) : null}
           <Button className="md:self-end" type="submit">
             <LuSearch aria-hidden="true" className="size-4" />
             Apply
@@ -299,13 +392,13 @@ export function PaymentPage() {
           ) : payments.length === 0 ? (
             <EmptyState
               description={
-                search || status
+                search || status || dateFrom || dateTo
                   ? 'Try a different search or payment status.'
                   : 'New simulated payment records will appear here.'
               }
               Icon={LuCircleDollarSign}
               title={
-                search || status
+                search || status || dateFrom || dateTo
                   ? 'No payment records matched your search.'
                   : 'No simulated payment records have been added.'
               }
@@ -321,6 +414,7 @@ export function PaymentPage() {
                       ) : null}
                       <th className="px-4 py-3 font-semibold">Amount</th>
                       <th className="px-4 py-3 font-semibold">Method</th>
+                      <th className="px-4 py-3 font-semibold">Reference</th>
                       <th className="px-4 py-3 font-semibold">Date</th>
                       <th className="px-4 py-3 font-semibold">Status</th>
                       <th className="px-4 py-3 text-right font-semibold">
@@ -347,6 +441,9 @@ export function PaymentPage() {
                         <td className="px-4 py-4 text-text">
                           {payment.payment_method}
                         </td>
+                        <td className="truncate px-4 py-4 text-text">
+                          {payment.transaction_reference || 'No reference'}
+                        </td>
                         <td className="px-4 py-4 text-text">
                           {formatDate(payment.payment_date)}
                         </td>
@@ -358,21 +455,13 @@ export function PaymentPage() {
                           </StatusChip>
                         </td>
                         <td className="px-4 py-4 text-right">
-                          {isAdmin &&
-                          (transitions[payment.payment_status] || []).length >
-                            0 ? (
-                            <button
-                              className="font-semibold text-primary hover:underline focus-visible:outline-primary"
-                              onClick={() => openReview(payment)}
-                              type="button"
-                            >
-                              Review
-                            </button>
-                          ) : (
-                            <span className="text-xs text-muted">
-                              {formatDateTime(payment.created_at)}
-                            </span>
-                          )}
+                          <button
+                            className="font-semibold text-primary hover:underline focus-visible:outline-primary"
+                            onClick={() => openReview(payment)}
+                            type="button"
+                          >
+                            View details
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -416,17 +505,20 @@ export function PaymentPage() {
                           {formatDate(payment.payment_date)}
                         </dd>
                       </div>
+                      <div className="col-span-2">
+                        <dt className="text-muted">Reference</dt>
+                        <dd className="break-all font-semibold text-text">
+                          {payment.transaction_reference || 'No reference'}
+                        </dd>
+                      </div>
                     </dl>
-                    {isAdmin &&
-                    (transitions[payment.payment_status] || []).length > 0 ? (
-                      <Button
-                        className="mt-4 w-full"
-                        onClick={() => openReview(payment)}
-                        variant="secondary"
-                      >
-                        Review Payment
-                      </Button>
-                    ) : null}
+                    <Button
+                      className="mt-4 w-full"
+                      onClick={() => openReview(payment)}
+                      variant="secondary"
+                    >
+                      View Details
+                    </Button>
                   </article>
                 ))}
               </div>
@@ -464,6 +556,20 @@ export function PaymentPage() {
           payment credentials or provider tokens.
         </p>
       </div>
+
+      {isConfirmingUpdate && selectedPayment ? (
+        <ConfirmDialog
+          confirmLabel="Update Status"
+          description={`Change this simulated payment from ${formatLabel(
+            selectedPayment.payment_status
+          )} to ${formatLabel(nextStatus)}?`}
+          isLoading={isUpdating}
+          onCancel={() => setIsConfirmingUpdate(false)}
+          onConfirm={reviewPayment}
+          title="Confirm payment status"
+          variant="primary"
+        />
+      ) : null}
     </PageContainer>
   );
 }

@@ -24,23 +24,28 @@ import { useDashboardStats } from '../hooks/useDashboardStats';
 
 const summaries = [
   {
-    key: 'students',
-    title: 'Students',
+    key: 'active_students',
+    title: 'Active students',
     Icon: LuGraduationCap,
     tone: 'information',
   },
-  { key: 'rooms', title: 'Rooms', Icon: LuBedDouble, tone: 'primary' },
   {
-    key: 'active_allocations',
-    title: 'Active allocations',
-    Icon: LuClipboardCheck,
+    key: 'available_rooms',
+    title: 'Available rooms',
+    Icon: LuBedDouble,
     tone: 'success',
   },
   {
-    key: 'open_maintenance',
-    title: 'Maintenance requests',
+    key: 'pending_maintenance',
+    title: 'Pending maintenance',
     Icon: LuWrench,
     tone: 'warning',
+  },
+  {
+    key: 'pending_visitors',
+    title: 'Visitor approvals',
+    Icon: LuUsersRound,
+    tone: 'primary',
   },
 ];
 
@@ -209,6 +214,22 @@ export function AdminDashboardPage() {
                 <OperationLink key={operation.path} {...operation} />
               ))}
             </nav>
+            {!statsLoading && stats ? (
+              <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-border pt-5 text-sm">
+                <div>
+                  <dt className="text-muted">Visitors inside</dt>
+                  <dd className="mt-1 font-bold text-text">
+                    {stats.visitors_inside}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-muted">Payment records</dt>
+                  <dd className="mt-1 font-bold text-text">
+                    {stats.simulated_payments_recorded}
+                  </dd>
+                </div>
+              </dl>
+            ) : null}
           </Card>
         </div>
 

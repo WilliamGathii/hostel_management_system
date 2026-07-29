@@ -44,13 +44,13 @@ const listPayments = async (req, res, next) => {
 
 const getPayment = async (req, res, next) => {
   try {
-    const payment = await paymentService.getPayment(
+    const result = await paymentService.getPayment(
       req.user,
       req.validatedParams.paymentId
     );
     return sendSuccess(res, {
       message: 'Payment record retrieved successfully',
-      data: { payment },
+      data: result,
     });
   } catch (error) {
     return next(error);
@@ -59,14 +59,14 @@ const getPayment = async (req, res, next) => {
 
 const createPayment = async (req, res, next) => {
   try {
-    const payment = await paymentService.createPayment(
+    const result = await paymentService.createPayment(
       req.user,
       req.validatedBody
     );
     return sendSuccess(res, {
       statusCode: 201,
       message: 'Simulated payment recorded successfully',
-      data: { payment },
+      data: result,
     });
   } catch (error) {
     return next(error);
@@ -75,14 +75,14 @@ const createPayment = async (req, res, next) => {
 
 const updatePaymentStatus = async (req, res, next) => {
   try {
-    const payment = await paymentService.updatePaymentStatus(
+    const result = await paymentService.updatePaymentStatus(
       req.user,
       req.validatedParams.paymentId,
       req.validatedBody
     );
     return sendSuccess(res, {
       message: 'Payment status updated successfully',
-      data: { payment },
+      data: result,
     });
   } catch (error) {
     return next(error);

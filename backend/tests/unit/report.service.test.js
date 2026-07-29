@@ -1,6 +1,7 @@
 jest.mock('../../src/models/report.model', () => ({
   getDashboard: jest.fn(),
   getRoomReport: jest.fn(),
+  getAllocationReport: jest.fn(),
   getStudentReport: jest.fn(),
   getMaintenanceReport: jest.fn(),
   getVisitorReport: jest.fn(),
@@ -22,6 +23,7 @@ describe('report service', () => {
     jest.clearAllMocks();
     reportModel.getDashboard.mockResolvedValue({ unread_notifications: 0 });
     reportModel.getRoomReport.mockResolvedValue({ records: [] });
+    reportModel.getAllocationReport.mockResolvedValue({ records: [] });
   });
 
   test.each(Object.values(users))(
@@ -43,4 +45,19 @@ describe('report service', () => {
       reportService.getRoomReport(users.student, options)
     ).rejects.toMatchObject({ statusCode: 403 });
   });
+
+  test('Admin can view the separate allocation report', async () => {
+    await expect(
+      reportService.getAllocationReport(users.admin, options)
+    ).resolves.toEqual({ records: [] });
+  });
+
+  test.each([users.student, users.security])(
+    '$role cannot view payment reports',
+    async (user) => {
+      await expect(
+        reportService.getPaymentReport(user, options)
+      ).rejects.toMatchObject({ statusCode: 403 });
+    }
+  );
 });

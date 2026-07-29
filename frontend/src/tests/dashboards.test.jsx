@@ -143,9 +143,16 @@ describe('role dashboards', () => {
     useDashboardStats.mockReturnValue({
       stats: {
         students: 12,
+        active_students: 11,
         rooms: 5,
+        available_rooms: 1,
+        occupied_rooms: 4,
         active_allocations: 8,
         open_maintenance: 3,
+        pending_maintenance: 2,
+        pending_visitors: 1,
+        visitors_inside: 2,
+        simulated_payments_recorded: 9,
         total_capacity: 10,
         current_occupancy: 8,
         available_beds: 2,

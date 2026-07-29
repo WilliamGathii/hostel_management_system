@@ -20,6 +20,12 @@ router.get(
   reportController.getRoomReport
 );
 router.get(
+  '/allocations',
+  reportValidation,
+  handleReportValidation,
+  reportController.getAllocationReport
+);
+router.get(
   '/students',
   reportValidation,
   handleReportValidation,

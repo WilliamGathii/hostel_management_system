@@ -26,7 +26,7 @@ const REPORT_STATUSES = [
 
 const reportValidation = [
   query('page').optional().isInt({ min: 1 }).toInt(),
-  query('limit').optional().isInt({ min: 1, max: 100 }).toInt(),
+  query('limit').optional().isInt({ min: 1, max: 50 }).toInt(),
   query('search').optional().isString().trim().isLength({ max: 100 }),
   query('status').optional().isIn(REPORT_STATUSES),
   query('room_id').optional().isUUID(),

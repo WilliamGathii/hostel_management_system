@@ -10,6 +10,7 @@ jest.mock('../../src/services/payment.service', () => ({
 jest.mock('../../src/services/report.service', () => ({
   getDashboard: jest.fn(),
   getRoomReport: jest.fn(),
+  getAllocationReport: jest.fn(),
   getStudentReport: jest.fn(),
   getMaintenanceReport: jest.fn(),
   getVisitorReport: jest.fn(),
@@ -43,6 +44,11 @@ const users = {
     role: 'maintenance_staff',
     account_status: 'active',
   },
+  security: {
+    id: 'payment-security-user',
+    role: 'security_staff',
+    account_status: 'active',
+  },
 };
 const payment = {
   id: paymentId,
@@ -50,6 +56,7 @@ const payment = {
   payment_status: 'pending',
 };
 const listResult = {
+  is_simulated: true,
   payments: [payment],
   pagination: { page: 1, limit: 20, total: 1, totalPages: 1 },
 };
@@ -63,14 +70,21 @@ describe('payment and report routes', () => {
     );
     paymentService.listMyPayments.mockResolvedValue(listResult);
     paymentService.listPayments.mockResolvedValue(listResult);
-    paymentService.getPayment.mockResolvedValue(payment);
-    paymentService.createPayment.mockResolvedValue(payment);
+    paymentService.getPayment.mockResolvedValue({
+      is_simulated: true,
+      payment,
+    });
+    paymentService.createPayment.mockResolvedValue({
+      is_simulated: true,
+      payment,
+    });
     paymentService.updatePaymentStatus.mockResolvedValue({
-      ...payment,
-      payment_status: 'paid',
+      is_simulated: true,
+      payment: { ...payment, payment_status: 'paid' },
     });
     reportService.getDashboard.mockResolvedValue({ payment_records: 1 });
     reportService.getRoomReport.mockResolvedValue({ rooms: [] });
+    reportService.getAllocationReport.mockResolvedValue({ records: [] });
     reportService.getStudentReport.mockResolvedValue({ records: [] });
     reportService.getMaintenanceReport.mockResolvedValue({ records: [] });
     reportService.getVisitorReport.mockResolvedValue({ records: [] });
@@ -83,6 +97,7 @@ describe('payment and report routes', () => {
       .set('Authorization', authorization(users.student));
     expect(response.status).toBe(200);
     expect(response.body.data.payments).toHaveLength(1);
+    expect(response.body.data.is_simulated).toBe(true);
   });
 
   test('Student can submit supported simulated payment fields', async () => {
@@ -109,6 +124,30 @@ describe('payment and report routes', () => {
         card_number: '4111111111111111',
       });
     expect(response.status).toBe(422);
+  });
+
+  test('Payment endpoint rejects invalid amounts and Student status fields', async () => {
+    const header = authorization(users.student);
+    const invalidAmount = await request(app)
+      .post('/api/v1/payments')
+      .set('Authorization', header)
+      .send({
+        amount: 0,
+        payment_method: 'Cash',
+        payment_date: '2026-07-29',
+      });
+    expect(invalidAmount.status).toBe(422);
+
+    const unsupportedStatus = await request(app)
+      .post('/api/v1/payments')
+      .set('Authorization', header)
+      .send({
+        amount: 1500,
+        payment_method: 'Cash',
+        payment_date: '2026-07-29',
+        payment_status: 'paid',
+      });
+    expect(unsupportedStatus.status).toBe(422);
   });
 
   test('Admin can list, view, create, and review payments', async () => {
@@ -147,12 +186,40 @@ describe('payment and report routes', () => {
     ).toBe(200);
   });
 
+  test('Payment detail responses contain no credential fields', async () => {
+    const response = await request(app)
+      .get(`/api/v1/payments/${paymentId}`)
+      .set('Authorization', authorization(users.admin));
+    expect(response.body.data.is_simulated).toBe(true);
+    expect(response.body.data.payment).not.toHaveProperty('password_hash');
+    expect(response.body.data.payment).not.toHaveProperty('card_number');
+    expect(response.body.data.payment).not.toHaveProperty('provider_token');
+  });
+
+  test('Payment status validation rejects unsupported values', async () => {
+    const response = await request(app)
+      .patch(`/api/v1/payments/${paymentId}/status`)
+      .set('Authorization', authorization(users.admin))
+      .send({ payment_status: 'processing' });
+    expect(response.status).toBe(422);
+  });
+
   test('Non-Admin cannot list all payments', async () => {
     const response = await request(app)
       .get('/api/v1/payments')
       .set('Authorization', authorization(users.student));
     expect(response.status).toBe(403);
   });
+
+  test.each([users.maintenance, users.security])(
+    '$role cannot access payment records',
+    async (user) => {
+      const response = await request(app)
+        .get('/api/v1/payments')
+        .set('Authorization', authorization(user));
+      expect(response.status).toBe(403);
+    }
+  );
 
   test.each(Object.values(users))(
     '$role can view role-specific dashboard statistics',
@@ -168,6 +235,7 @@ describe('payment and report routes', () => {
     const header = authorization(users.admin);
     for (const path of [
       'rooms',
+      'allocations',
       'students',
       'maintenance',
       'visitors',
@@ -185,6 +253,19 @@ describe('payment and report routes', () => {
       .get('/api/v1/reports/rooms')
       .set('Authorization', authorization(users.student));
     expect(response.status).toBe(403);
+  });
+
+  test('Report filters reject invalid dates and unsupported statuses', async () => {
+    const header = authorization(users.admin);
+    const invalidDate = await request(app)
+      .get('/api/v1/reports/payments?date_from=not-a-date')
+      .set('Authorization', header);
+    expect(invalidDate.status).toBe(422);
+
+    const invalidStatus = await request(app)
+      .get('/api/v1/reports/payments?status=processing')
+      .set('Authorization', header);
+    expect(invalidStatus.status).toBe(422);
   });
 
   test('Payment and report routes require authentication', async () => {

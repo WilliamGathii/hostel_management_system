@@ -31,12 +31,22 @@ describe('payment and report services', () => {
       .mockResolvedValueOnce({ data: { payments: [] } })
       .mockResolvedValueOnce({ data: { payments: [] } });
     await getMyPayments({ status: 'pending' });
-    await getPayments({ page: 1, limit: 20 });
+    await getPayments({
+      page: 1,
+      limit: 20,
+      date_from: '2026-07-01',
+      date_to: '2026-07-31',
+    });
     expect(apiClient.get).toHaveBeenNthCalledWith(1, '/payments/me', {
       params: { status: 'pending' },
     });
     expect(apiClient.get).toHaveBeenNthCalledWith(2, '/payments', {
-      params: { page: 1, limit: 20 },
+      params: {
+        page: 1,
+        limit: 20,
+        date_from: '2026-07-01',
+        date_to: '2026-07-31',
+      },
     });
   });
 
@@ -67,6 +77,16 @@ describe('payment and report services', () => {
     });
     expect(apiClient.get).toHaveBeenLastCalledWith('/reports/rooms', {
       params: { status: 'available' },
+    });
+  });
+
+  test('loads the separate allocation report contract', async () => {
+    apiClient.get.mockResolvedValue({
+      data: { allocation_report: { records: [] } },
+    });
+    expect(await getReport('allocations')).toEqual({ records: [] });
+    expect(apiClient.get).toHaveBeenCalledWith('/reports/allocations', {
+      params: {},
     });
   });
 });

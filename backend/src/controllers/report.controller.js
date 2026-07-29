@@ -43,6 +43,11 @@ const getRoomReport = reportHandler(
   'room_report',
   'Room report retrieved successfully'
 );
+const getAllocationReport = reportHandler(
+  reportService.getAllocationReport,
+  'allocation_report',
+  'Room allocation report retrieved successfully'
+);
 const getStudentReport = reportHandler(
   reportService.getStudentReport,
   'student_report',
@@ -67,6 +72,7 @@ const getPaymentReport = reportHandler(
 module.exports = {
   getDashboard,
   getRoomReport,
+  getAllocationReport,
   getStudentReport,
   getMaintenanceReport,
   getVisitorReport,

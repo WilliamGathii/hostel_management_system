@@ -29,19 +29,30 @@ const pagination = (options, total) => ({
   totalPages: total === 0 ? 0 : Math.ceil(total / options.limit),
 });
 
+const simulatedResult = (result) => ({
+  is_simulated: true,
+  ...result,
+});
+
 const listMyPayments = async (user, options) => {
   requireRole(user, ['student']);
   const query = { ...options, studentUserId: user.id };
   const payments = await paymentModel.listPayments(query);
   const total = await paymentModel.countPayments(query);
-  return { payments, pagination: pagination(options, total) };
+  return simulatedResult({
+    payments,
+    pagination: pagination(options, total),
+  });
 };
 
 const listPayments = async (user, options) => {
   requireRole(user, ['admin']);
   const payments = await paymentModel.listPayments(options);
   const total = await paymentModel.countPayments(options);
-  return { payments, pagination: pagination(options, total) };
+  return simulatedResult({
+    payments,
+    pagination: pagination(options, total),
+  });
 };
 
 const getPayment = async (user, paymentId) => {
@@ -53,7 +64,7 @@ const getPayment = async (user, paymentId) => {
   if (user.role === 'student' && payment.student_user_id !== user.id) {
     throw new AppError('You do not have permission for this record', 403);
   }
-  return payment;
+  return simulatedResult({ payment });
 };
 
 const resolvePaymentStudent = async (user, allocationId, database) => {
@@ -91,7 +102,7 @@ const resolvePaymentStudent = async (user, allocationId, database) => {
 const createPayment = async (user, data) => {
   requireRole(user, ['student', 'admin']);
   try {
-    return await paymentModel.withTransaction(async (database) => {
+    const payment = await paymentModel.withTransaction(async (database) => {
       const { studentId } = await resolvePaymentStudent(
         user,
         data.room_allocation_id,
@@ -110,6 +121,7 @@ const createPayment = async (user, data) => {
         database
       );
     });
+    return simulatedResult({ payment });
   } catch (error) {
     if (
       error.code === '23505' &&
@@ -123,7 +135,7 @@ const createPayment = async (user, data) => {
 
 const updatePaymentStatus = async (user, paymentId, data) => {
   requireRole(user, ['admin']);
-  return paymentModel.withTransaction(async (database) => {
+  const payment = await paymentModel.withTransaction(async (database) => {
     const payment = await paymentModel.findPaymentById(
       paymentId,
       database,
@@ -160,6 +172,7 @@ const updatePaymentStatus = async (user, paymentId, data) => {
     );
     return updated;
   });
+  return simulatedResult({ payment });
 };
 
 module.exports = {

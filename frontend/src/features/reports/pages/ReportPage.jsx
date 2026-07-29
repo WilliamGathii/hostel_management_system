@@ -1,11 +1,22 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  LuActivity,
   LuBedDouble,
+  LuClipboardCheck,
   LuGraduationCap,
   LuReceiptText,
   LuUsersRound,
   LuWrench,
 } from 'react-icons/lu';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 import { Button } from '../../../components/common/Button';
 import { Card } from '../../../components/common/Card';
@@ -13,6 +24,7 @@ import { PageContainer } from '../../../components/common/PageContainer';
 import { PageHeader } from '../../../components/common/PageHeader';
 import { StatusChip } from '../../../components/common/StatusChip';
 import { ErrorState } from '../../../components/feedback/ErrorState';
+import { EmptyState } from '../../../components/feedback/EmptyState';
 import { Skeleton } from '../../../components/feedback/Skeleton';
 import { formatDate, formatLabel } from '../../../utils/formatters';
 import { ReportTable } from '../components/ReportTable';
@@ -20,6 +32,11 @@ import { getReport } from '../services/report.service';
 
 const reportTypes = [
   { value: 'rooms', label: 'Rooms', Icon: LuBedDouble },
+  {
+    value: 'allocations',
+    label: 'Allocations',
+    Icon: LuClipboardCheck,
+  },
   { value: 'students', label: 'Students', Icon: LuGraduationCap },
   { value: 'maintenance', label: 'Maintenance', Icon: LuWrench },
   { value: 'visitors', label: 'Visitors', Icon: LuUsersRound },
@@ -27,23 +44,16 @@ const reportTypes = [
 ];
 
 const recordTitles = {
+  allocations: 'Room allocation records',
   students: 'Student records',
   maintenance: 'Maintenance records',
   visitors: 'Visitor records',
-  payments: 'Payment records',
+  payments: 'Simulated Payment Records',
 };
 
 const statuses = {
-  rooms: [
-    'available',
-    'occupied',
-    'full',
-    'under_maintenance',
-    'inactive',
-    'active',
-    'completed',
-    'cancelled',
-  ],
+  rooms: ['available', 'occupied', 'full', 'under_maintenance', 'inactive'],
+  allocations: ['pending', 'active', 'completed', 'cancelled'],
   students: ['active', 'suspended', 'inactive'],
   maintenance: [
     'submitted',
@@ -90,6 +100,26 @@ const amount = (value) =>
   });
 
 const columnsByType = {
+  allocations: [
+    {
+      label: 'Student',
+      render: (record) => (
+        <div>
+          <p className="font-semibold">{record.student_name}</p>
+          <p className="text-xs text-muted">{record.student_number}</p>
+        </div>
+      ),
+    },
+    { label: 'Room', render: (record) => record.room_number },
+    {
+      label: 'Start date',
+      render: (record) => formatDate(record.start_date),
+    },
+    {
+      label: 'Status',
+      render: (record) => <Status value={record.allocation_status} />,
+    },
+  ],
   students: [
     {
       label: 'Student',
@@ -193,24 +223,6 @@ const roomColumns = [
   { label: 'Status', render: (record) => <Status value={record.status} /> },
 ];
 
-const allocationColumns = [
-  {
-    label: 'Student',
-    render: (record) => (
-      <div>
-        <p className="font-semibold">{record.student_name}</p>
-        <p className="text-xs text-muted">{record.student_number}</p>
-      </div>
-    ),
-  },
-  { label: 'Room', render: (record) => record.room_number },
-  { label: 'Start date', render: (record) => formatDate(record.start_date) },
-  {
-    label: 'Status',
-    render: (record) => <Status value={record.allocation_status} />,
-  },
-];
-
 function SummaryPanels({ report, reportType }) {
   const items = useMemo(() => {
     if (reportType === 'rooms') {
@@ -228,7 +240,53 @@ function SummaryPanels({ report, reportType }) {
       return [
         ['Students', summary.total_students],
         ['Active accounts', summary.active_students],
+        ['Suspended accounts', summary.suspended_students],
+        ['Inactive accounts', summary.inactive_students],
+        ['Registered in period', summary.registrations_in_period],
         ['Allocated students', summary.allocated_students],
+      ].slice(0, 5);
+    }
+    if (reportType === 'allocations') {
+      const summary = report.summary || {};
+      return [
+        ['Allocations', summary.total_allocations],
+        ['Active', summary.active_allocations],
+        ['Pending', summary.pending_allocations],
+        ['Completed', summary.completed_allocations],
+        ['Cancelled', summary.cancelled_allocations],
+      ];
+    }
+    if (reportType === 'maintenance') {
+      const summary = report.summary || {};
+      return [
+        ['Requests', summary.total_requests],
+        ['Assigned', summary.assigned_requests],
+        ['Unassigned', summary.unassigned_requests],
+        ['Completed', summary.completed_requests],
+        [
+          'Average completion',
+          summary.average_completion_hours
+            ? `${summary.average_completion_hours} hours`
+            : 'No data',
+        ],
+      ];
+    }
+    if (reportType === 'visitors') {
+      const summary = report.summary || {};
+      return [
+        ['Visitors', summary.total_visitors],
+        ['Entries', summary.entries_recorded],
+        ['Exits', summary.exits_recorded],
+        ['Currently inside', summary.currently_inside],
+      ];
+    }
+    if (reportType === 'payments') {
+      const summary = report.summary || {};
+      return [
+        ['Records', summary.total_records],
+        ['Recorded amount', amount(summary.total_amount)],
+        ['Paid amount', amount(summary.paid_amount)],
+        ['Pending amount', amount(summary.pending_amount)],
       ];
     }
     return (report.status_breakdown || []).map((item) => [
@@ -255,6 +313,67 @@ function SummaryPanels({ report, reportType }) {
         </Card>
       ))}
     </section>
+  );
+}
+
+function ReportChart({ report, reportType }) {
+  const data = useMemo(() => {
+    if (reportType === 'students') {
+      const summary = report.summary || {};
+      return [
+        { name: 'Active', total: Number(summary.active_students || 0) },
+        { name: 'Suspended', total: Number(summary.suspended_students || 0) },
+        { name: 'Inactive', total: Number(summary.inactive_students || 0) },
+      ];
+    }
+    return (report.status_breakdown || []).map((item) => ({
+      name: formatLabel(item.status),
+      total: Number(item.total || 0),
+    }));
+  }, [report, reportType]);
+  const hasData = data.some((item) => item.total > 0);
+
+  return (
+    <Card>
+      <h2 className="text-lg font-bold text-text">Status overview</h2>
+      <p className="mt-1 text-sm text-muted">
+        A summary of the records in this report.
+      </p>
+      {hasData ? (
+        <div
+          aria-label={`${formatLabel(reportType)} status chart`}
+          className="mt-6 h-72 w-full"
+          role="img"
+        >
+          <ResponsiveContainer height="100%" width="100%">
+            <BarChart data={data} margin={{ left: -16, right: 8 }}>
+              <CartesianGrid
+                stroke="var(--color-border)"
+                strokeDasharray="3 3"
+              />
+              <XAxis
+                dataKey="name"
+                stroke="var(--color-muted)"
+                tick={{ fontSize: 12 }}
+              />
+              <YAxis allowDecimals={false} stroke="var(--color-muted)" />
+              <Tooltip />
+              <Bar
+                dataKey="total"
+                fill="var(--color-primary)"
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      ) : (
+        <EmptyState
+          description="Records will appear here when data is available."
+          Icon={LuActivity}
+          title="No chart data is available."
+        />
+      )}
+    </Card>
   );
 }
 
@@ -307,8 +426,7 @@ export function ReportPage() {
     setAppliedFilters(filters);
   };
 
-  const records =
-    reportType === 'rooms' ? report.allocations || [] : report.records || [];
+  const records = report.records || [];
 
   return (
     <PageContainer>
@@ -467,6 +585,7 @@ export function ReportPage() {
       ) : (
         <div className="space-y-6">
           <SummaryPanels report={report} reportType={reportType} />
+          <ReportChart report={report} reportType={reportType} />
 
           {reportType === 'rooms' ? (
             <Card>
@@ -482,23 +601,19 @@ export function ReportPage() {
             </Card>
           ) : null}
 
-          <Card>
-            <h2 className="mb-5 text-lg font-bold text-text">
-              {reportType === 'rooms'
-                ? 'Room allocation records'
-                : recordTitles[reportType]}
-            </h2>
-            <ReportTable
-              columns={
-                reportType === 'rooms'
-                  ? allocationColumns
-                  : columnsByType[reportType]
-              }
-              emptyDescription="Adjust the filters or add relevant system records."
-              emptyTitle={`No ${reportType} records matched this report.`}
-              records={records}
-            />
-          </Card>
+          {reportType !== 'rooms' ? (
+            <Card>
+              <h2 className="mb-5 text-lg font-bold text-text">
+                {recordTitles[reportType]}
+              </h2>
+              <ReportTable
+                columns={columnsByType[reportType]}
+                emptyDescription="Adjust the filters or add relevant system records."
+                emptyTitle={`No ${reportType} records matched this report.`}
+                records={records}
+              />
+            </Card>
+          ) : null}
         </div>
       )}
     </PageContainer>

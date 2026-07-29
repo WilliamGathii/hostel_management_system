@@ -44,11 +44,21 @@ const getAdminDashboard = async (database = getDatabase()) => {
   const result = await database.query(
     `SELECT
        (SELECT COUNT(*)::integer FROM users WHERE role = 'student') AS students,
+       (SELECT COUNT(*)::integer FROM users WHERE role = 'student' AND account_status = 'active') AS active_students,
        (SELECT COUNT(*)::integer FROM rooms) AS rooms,
+       (SELECT COUNT(*)::integer FROM rooms WHERE status = 'available') AS available_rooms,
+       (SELECT COUNT(*)::integer FROM rooms WHERE status IN ('occupied', 'full') OR current_occupancy > 0) AS occupied_rooms,
        (SELECT COUNT(*)::integer FROM room_allocations WHERE allocation_status = 'active') AS active_allocations,
        (SELECT COUNT(*)::integer FROM maintenance_requests WHERE status IN ('submitted', 'assigned', 'in_progress')) AS open_maintenance,
+       (SELECT COUNT(*)::integer FROM maintenance_requests WHERE status = 'submitted') AS pending_maintenance,
        (SELECT COUNT(*)::integer FROM visitors WHERE approval_status = 'pending') AS pending_visitors,
        (SELECT COUNT(*)::integer FROM payments WHERE payment_status = 'pending') AS pending_payments,
+       (SELECT COUNT(*)::integer FROM payments) AS simulated_payments_recorded,
+       (
+         SELECT COUNT(*)::integer
+         FROM visitor_verifications
+         WHERE verification_status = 'checked_in' AND exit_time IS NULL
+       ) AS visitors_inside,
        (SELECT COALESCE(SUM(capacity), 0)::integer FROM rooms WHERE status <> 'inactive') AS total_capacity,
        (SELECT COALESCE(SUM(current_occupancy), 0)::integer FROM rooms WHERE status <> 'inactive') AS current_occupancy`
   );
@@ -288,6 +298,78 @@ const getRoomReport = async (options, database = getDatabase()) => {
   };
 };
 
+const getAllocationReport = async (options, database = getDatabase()) => {
+  const filters = buildAllocationFilters(options);
+  const reportWhere = where(filters.conditions);
+  const offset = (options.page - 1) * options.limit;
+  const countResult = await database.query(
+    `SELECT COUNT(*)::integer AS total
+     FROM room_allocations ra
+     ${reportWhere}`,
+    filters.values
+  );
+  const roomBreakdownResult = await database.query(
+    `SELECT r.room_number, COUNT(*)::integer AS total
+     FROM room_allocations ra
+     INNER JOIN rooms r ON r.id = ra.room_id
+     ${reportWhere}
+     GROUP BY r.room_number
+     ORDER BY r.room_number`,
+    filters.values
+  );
+  const periodResult = await database.query(
+    `SELECT DATE_TRUNC('month', ra.start_date)::date AS period,
+            COUNT(*)::integer AS total
+     FROM room_allocations ra
+     ${reportWhere}
+     GROUP BY DATE_TRUNC('month', ra.start_date)
+     ORDER BY period`,
+    filters.values
+  );
+  const summaryResult = await database.query(
+    `SELECT
+       COUNT(*)::integer AS total_allocations,
+       COUNT(*) FILTER (WHERE ra.allocation_status = 'pending')::integer AS pending_allocations,
+       COUNT(*) FILTER (WHERE ra.allocation_status = 'active')::integer AS active_allocations,
+       COUNT(*) FILTER (WHERE ra.allocation_status = 'completed')::integer AS completed_allocations,
+       COUNT(*) FILTER (WHERE ra.allocation_status = 'cancelled')::integer AS cancelled_allocations
+     FROM room_allocations ra
+     ${reportWhere}`,
+    filters.values
+  );
+  const statusResult = await database.query(
+    `SELECT ra.allocation_status AS status, COUNT(*)::integer AS total
+     FROM room_allocations ra
+     ${reportWhere}
+     GROUP BY ra.allocation_status
+     ORDER BY ra.allocation_status`,
+    filters.values
+  );
+  const recordsResult = await database.query(
+    `SELECT ra.id, ra.start_date, ra.expected_end_date, ra.actual_end_date,
+            ra.allocation_status, r.room_number, sp.student_number,
+            u.full_name AS student_name
+     FROM room_allocations ra
+     INNER JOIN rooms r ON r.id = ra.room_id
+     INNER JOIN student_profiles sp ON sp.id = ra.student_id
+     INNER JOIN users u ON u.id = sp.user_id
+     ${reportWhere}
+     ORDER BY ra.start_date DESC, ra.created_at DESC
+     LIMIT $${filters.values.length + 1}
+     OFFSET $${filters.values.length + 2}`,
+    [...filters.values, options.limit, offset]
+  );
+  const total = countResult.rows[0]?.total || 0;
+  return {
+    summary: summaryResult.rows[0],
+    status_breakdown: statusResult.rows,
+    room_breakdown: roomBreakdownResult.rows,
+    period_breakdown: periodResult.rows,
+    records: recordsResult.rows,
+    pagination: pagination(options, total),
+  };
+};
+
 const getStudentReport = async (options, database = getDatabase()) => {
   const values = [];
   const conditions = ["u.role = 'student'"];
@@ -302,6 +384,18 @@ const getStudentReport = async (options, database = getDatabase()) => {
     conditions,
     options.roomId,
     (index) => `ra.room_id = $${index}`
+  );
+  addFilter(
+    values,
+    conditions,
+    options.dateFrom,
+    (index) => `u.created_at::date >= $${index}`
+  );
+  addFilter(
+    values,
+    conditions,
+    options.dateTo,
+    (index) => `u.created_at::date <= $${index}`
   );
   if (options.search) {
     addFilter(
@@ -342,16 +436,36 @@ const getStudentReport = async (options, database = getDatabase()) => {
     `SELECT
        COUNT(*)::integer AS total_students,
        COUNT(*) FILTER (WHERE u.account_status = 'active')::integer AS active_students,
+       COUNT(*) FILTER (WHERE u.account_status = 'suspended')::integer AS suspended_students,
+       COUNT(*) FILTER (WHERE u.account_status = 'inactive')::integer AS inactive_students,
+       COUNT(*) FILTER (
+         WHERE ($1::date IS NULL OR u.created_at::date >= $1::date)
+           AND ($2::date IS NULL OR u.created_at::date <= $2::date)
+       )::integer AS registrations_in_period,
        COUNT(ra.id)::integer AS allocated_students
      FROM student_profiles sp
      INNER JOIN users u ON u.id = sp.user_id
      LEFT JOIN room_allocations ra
        ON ra.student_id = sp.id AND ra.allocation_status = 'active'
-     WHERE u.role = 'student'`
+     WHERE u.role = 'student'`,
+    [options.dateFrom || null, options.dateTo || null]
+  );
+  const periodResult = await database.query(
+    `SELECT DATE_TRUNC('month', u.created_at)::date AS period,
+            COUNT(DISTINCT sp.id)::integer AS total
+     FROM student_profiles sp
+     INNER JOIN users u ON u.id = sp.user_id
+     LEFT JOIN room_allocations ra
+       ON ra.student_id = sp.id AND ra.allocation_status = 'active'
+     ${reportWhere}
+     GROUP BY DATE_TRUNC('month', u.created_at)
+     ORDER BY period`,
+    values
   );
   const total = countResult.rows[0]?.total || 0;
   return {
     summary: summaryResult.rows[0],
+    period_breakdown: periodResult.rows,
     records: recordsResult.rows,
     pagination: pagination(options, total),
   };
@@ -402,6 +516,29 @@ const getMaintenanceReport = async (options, database = getDatabase()) => {
      ORDER BY mr.status`,
     filters.values
   );
+  const priorityResult = await database.query(
+    `SELECT mr.priority, COUNT(*)::integer AS total
+     FROM maintenance_requests mr
+     ${reportWhere}
+     GROUP BY mr.priority
+     ORDER BY mr.priority`,
+    filters.values
+  );
+  const totalsResult = await database.query(
+    `SELECT
+       COUNT(*)::integer AS total_requests,
+       COUNT(*) FILTER (WHERE mr.assigned_staff_id IS NOT NULL)::integer AS assigned_requests,
+       COUNT(*) FILTER (WHERE mr.assigned_staff_id IS NULL)::integer AS unassigned_requests,
+       COUNT(*) FILTER (WHERE mr.status = 'completed')::integer AS completed_requests,
+       ROUND(
+         AVG(EXTRACT(EPOCH FROM (mr.completed_at - mr.submitted_at)) / 3600)
+           FILTER (WHERE mr.status = 'completed' AND mr.completed_at IS NOT NULL),
+         1
+       ) AS average_completion_hours
+     FROM maintenance_requests mr
+     ${reportWhere}`,
+    filters.values
+  );
   const recordsResult = await database.query(
     `SELECT mr.id, mr.title, mr.priority, mr.status, mr.submitted_at,
             mr.completed_at, r.room_number, sp.student_number,
@@ -420,7 +557,9 @@ const getMaintenanceReport = async (options, database = getDatabase()) => {
   );
   const total = countResult.rows[0]?.total || 0;
   return {
+    summary: totalsResult.rows[0],
     status_breakdown: summaryResult.rows,
+    priority_breakdown: priorityResult.rows,
     records: recordsResult.rows,
     pagination: pagination(options, total),
   };
@@ -446,6 +585,19 @@ const getVisitorReport = async (options, database = getDatabase()) => {
      ORDER BY v.approval_status`,
     filters.values
   );
+  const totalsResult = await database.query(
+    `SELECT
+       COUNT(DISTINCT v.id)::integer AS total_visitors,
+       COUNT(DISTINCT vv.id) FILTER (WHERE vv.entry_time IS NOT NULL)::integer AS entries_recorded,
+       COUNT(DISTINCT vv.id) FILTER (WHERE vv.exit_time IS NOT NULL)::integer AS exits_recorded,
+       COUNT(DISTINCT vv.id) FILTER (
+         WHERE vv.entry_time IS NOT NULL AND vv.exit_time IS NULL
+       )::integer AS currently_inside
+     FROM visitors v
+     LEFT JOIN visitor_verifications vv ON vv.visitor_id = v.id
+     ${reportWhere}`,
+    filters.values
+  );
   const recordsResult = await database.query(
     `SELECT v.id, v.visitor_name, v.visit_date, v.expected_entry_time,
             v.expected_exit_time, v.approval_status, sp.student_number,
@@ -463,6 +615,7 @@ const getVisitorReport = async (options, database = getDatabase()) => {
   );
   const total = countResult.rows[0]?.total || 0;
   return {
+    summary: totalsResult.rows[0],
     status_breakdown: summaryResult.rows,
     records: recordsResult.rows,
     pagination: pagination(options, total),
@@ -494,6 +647,38 @@ const getPaymentReport = async (options, database = getDatabase()) => {
      ORDER BY p.payment_status`,
     filters.values
   );
+  const methodResult = await database.query(
+    `SELECT p.payment_method, COUNT(*)::integer AS total,
+            COALESCE(SUM(p.amount), 0)::numeric(12,2) AS amount
+     FROM payments p
+     LEFT JOIN room_allocations ra ON ra.id = p.room_allocation_id
+     ${reportWhere}
+     GROUP BY p.payment_method
+     ORDER BY p.payment_method`,
+    filters.values
+  );
+  const totalsResult = await database.query(
+    `SELECT
+       COUNT(*)::integer AS total_records,
+       COALESCE(SUM(p.amount), 0)::numeric(12,2) AS total_amount,
+       COALESCE(SUM(p.amount) FILTER (WHERE p.payment_status = 'paid'), 0)::numeric(12,2) AS paid_amount,
+       COALESCE(SUM(p.amount) FILTER (WHERE p.payment_status = 'pending'), 0)::numeric(12,2) AS pending_amount
+     FROM payments p
+     LEFT JOIN room_allocations ra ON ra.id = p.room_allocation_id
+     ${reportWhere}`,
+    filters.values
+  );
+  const periodResult = await database.query(
+    `SELECT DATE_TRUNC('month', p.payment_date)::date AS period,
+            COUNT(*)::integer AS total,
+            COALESCE(SUM(p.amount), 0)::numeric(12,2) AS amount
+     FROM payments p
+     LEFT JOIN room_allocations ra ON ra.id = p.room_allocation_id
+     ${reportWhere}
+     GROUP BY DATE_TRUNC('month', p.payment_date)
+     ORDER BY period`,
+    filters.values
+  );
   const recordsResult = await database.query(
     `SELECT p.id, p.amount, p.payment_method, p.transaction_reference,
             p.payment_date, p.payment_status, sp.student_number,
@@ -511,7 +696,11 @@ const getPaymentReport = async (options, database = getDatabase()) => {
   );
   const total = countResult.rows[0]?.total || 0;
   return {
+    is_simulated: true,
+    summary: totalsResult.rows[0],
     status_breakdown: summaryResult.rows,
+    method_breakdown: methodResult.rows,
+    period_breakdown: periodResult.rows,
     records: recordsResult.rows,
     pagination: pagination(options, total),
   };
@@ -520,6 +709,7 @@ const getPaymentReport = async (options, database = getDatabase()) => {
 module.exports = {
   getDashboard,
   getRoomReport,
+  getAllocationReport,
   getStudentReport,
   getMaintenanceReport,
   getVisitorReport,

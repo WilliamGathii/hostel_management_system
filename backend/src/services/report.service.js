@@ -24,6 +24,11 @@ const getRoomReport = async (user, options) => {
   return reportModel.getRoomReport(options);
 };
 
+const getAllocationReport = async (user, options) => {
+  requireAdmin(user);
+  return reportModel.getAllocationReport(options);
+};
+
 const getStudentReport = async (user, options) => {
   requireAdmin(user);
   return reportModel.getStudentReport(options);
@@ -47,6 +52,7 @@ const getPaymentReport = async (user, options) => {
 module.exports = {
   getDashboard,
   getRoomReport,
+  getAllocationReport,
   getStudentReport,
   getMaintenanceReport,
   getVisitorReport,

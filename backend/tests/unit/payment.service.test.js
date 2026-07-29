@@ -62,6 +62,23 @@ describe('payment service', () => {
     ).rejects.toMatchObject({ statusCode: 403 });
   });
 
+  test('Admin payment lists keep pagination and filter options', async () => {
+    const filtered = {
+      ...options,
+      status: 'paid',
+      dateFrom: new Date('2026-07-01'),
+      dateTo: new Date('2026-07-31'),
+    };
+    await expect(
+      paymentService.listPayments(users.admin, filtered)
+    ).resolves.toMatchObject({
+      is_simulated: true,
+      pagination: { total: 1, totalPages: 1 },
+    });
+    expect(paymentModel.listPayments).toHaveBeenCalledWith(filtered);
+    expect(paymentModel.countPayments).toHaveBeenCalledWith(filtered);
+  });
+
   test('Student cannot view another Student payment record', async () => {
     paymentModel.findPaymentById.mockResolvedValue(payment);
     await expect(
@@ -85,7 +102,7 @@ describe('payment service', () => {
         payment_date: new Date('2026-07-29'),
         notes: '',
       })
-    ).resolves.toEqual(payment);
+    ).resolves.toEqual({ is_simulated: true, payment });
     expect(paymentModel.createPayment).toHaveBeenCalledWith(
       expect.objectContaining({
         student_id: 'student-profile',
@@ -117,7 +134,10 @@ describe('payment service', () => {
         payment_status: 'paid',
         notes: 'Reviewed',
       })
-    ).resolves.toMatchObject({ payment_status: 'paid' });
+    ).resolves.toMatchObject({
+      is_simulated: true,
+      payment: { payment_status: 'paid' },
+    });
     expect(notificationService.createNotification).toHaveBeenCalled();
   });
 
@@ -131,5 +151,25 @@ describe('payment service', () => {
         payment_status: 'paid',
       })
     ).rejects.toMatchObject({ statusCode: 409 });
+  });
+
+  test('Duplicate transaction references return a conflict', async () => {
+    paymentModel.findStudentByUserId.mockResolvedValue({
+      id: 'student-profile',
+    });
+    paymentModel.createPayment.mockRejectedValue({
+      code: '23505',
+      constraint: 'payments_transaction_reference_key',
+    });
+    await expect(
+      paymentService.createPayment(users.student, {
+        amount: 1500,
+        payment_method: 'Cash',
+        payment_date: new Date('2026-07-29'),
+      })
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      message: 'Transaction reference already exists',
+    });
   });
 });
