@@ -21,6 +21,17 @@ const validateAllowedFields = (allowedFields, emptyMessage) => (value) => {
   return true;
 };
 
+const cleanMatchedData = (data) => {
+  const rootValue = data[''];
+  const cleaned = { ...data };
+
+  delete cleaned[''];
+
+  return rootValue && typeof rootValue === 'object' && !Array.isArray(rootValue)
+    ? { ...rootValue, ...cleaned }
+    : cleaned;
+};
+
 const handleValidation = (req, _res, next) => {
   const result = validationResult(req);
 
@@ -34,9 +45,15 @@ const handleValidation = (req, _res, next) => {
     return;
   }
 
-  req.validatedBody = matchedData(req, { locations: ['body'] });
-  req.validatedParams = matchedData(req, { locations: ['params'] });
-  req.validatedQuery = matchedData(req, { locations: ['query'] });
+  req.validatedBody = cleanMatchedData(
+    matchedData(req, { locations: ['body'] })
+  );
+  req.validatedParams = cleanMatchedData(
+    matchedData(req, { locations: ['params'] })
+  );
+  req.validatedQuery = cleanMatchedData(
+    matchedData(req, { locations: ['query'] })
+  );
   next();
 };
 

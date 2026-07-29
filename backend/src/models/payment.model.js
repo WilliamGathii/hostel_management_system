@@ -18,7 +18,8 @@ const PAYMENT_COLUMNS = `
   student_user.id AS student_user_id,
   student_user.full_name AS student_name,
   student_user.email AS student_email,
-  r.room_number,
+  r.room_code AS room_number,
+  r.room_code,
   recorder.full_name AS recorded_by_name
 `;
 
@@ -70,7 +71,7 @@ const findStudentByUserId = async (userId, database = getDatabase()) => {
 const findAllocationById = async (allocationId, database = getDatabase()) => {
   const result = await database.query(
     `SELECT ra.id, ra.student_id, ra.room_id, ra.allocation_status,
-            sp.user_id AS student_user_id, r.room_number
+            sp.user_id AS student_user_id, r.room_code AS room_number
      FROM room_allocations ra
      INNER JOIN student_profiles sp ON sp.id = ra.student_id
      INNER JOIN rooms r ON r.id = ra.room_id

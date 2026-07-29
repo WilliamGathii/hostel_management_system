@@ -7,6 +7,7 @@ const {
   roomIdentifierValidation,
   roomListValidation,
   roomCreateValidation,
+  roomBulkCreateValidation,
   roomUpdateValidation,
   roomStatusValidation,
   handleRoomValidation,
@@ -20,6 +21,12 @@ router.get(
   roomListValidation,
   handleRoomValidation,
   roomController.listRooms
+);
+router.post(
+  '/bulk',
+  roomBulkCreateValidation,
+  handleRoomValidation,
+  roomController.createRoomsBulk
 );
 router.post(
   '/',

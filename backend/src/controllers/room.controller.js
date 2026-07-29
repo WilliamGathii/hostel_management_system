@@ -7,10 +7,30 @@ const listRooms = async (req, res, next) => {
       page: req.validatedQuery.page || 1,
       limit: req.validatedQuery.limit || 20,
       search: req.validatedQuery.search || '',
-      status: req.validatedQuery.status || '',
+      floor: req.validatedQuery.floor || '',
+      roomTypeId: req.validatedQuery.room_type_id || '',
+      roomTypeCode: req.validatedQuery.room_type_code || '',
+      operationalStatus: req.validatedQuery.operational_status || '',
+      occupancyStatus: req.validatedQuery.occupancy_status || '',
     });
     return sendSuccess(res, {
       message: 'Rooms retrieved successfully',
+      data: result,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const createRoomsBulk = async (req, res, next) => {
+  try {
+    const result = await roomService.createRoomsBulk(
+      req.user,
+      req.validatedBody
+    );
+    return sendSuccess(res, {
+      statusCode: 201,
+      message: 'Rooms generated successfully',
       data: result,
     });
   } catch (error) {
@@ -161,6 +181,7 @@ module.exports = {
   listRooms,
   getRoom,
   createRoom,
+  createRoomsBulk,
   updateRoom,
   updateRoomStatus,
   getMyAllocation,

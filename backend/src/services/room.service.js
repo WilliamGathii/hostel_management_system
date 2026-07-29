@@ -1,18 +1,16 @@
+const {
+  generateRoomCode,
+  generateRoomCodes,
+} = require('../../../shared/room-code.js');
 const roomModel = require('../models/room.model');
+const roomTypeModel = require('../models/room-type.model');
 const notificationService = require('./notification.service');
 const AppError = require('../utils/app-error');
 
 const ADMIN_ROLE = 'admin';
 const STUDENT_ROLE = 'student';
-const ROOM_STATUSES = new Set([
-  'available',
-  'occupied',
-  'full',
-  'under_maintenance',
-  'inactive',
-]);
-const BLOCKED_ALLOCATION_STATUSES = new Set([
-  'full',
+const ROOM_OPERATIONAL_STATUSES = new Set([
+  'active',
   'under_maintenance',
   'inactive',
 ]);
@@ -27,44 +25,24 @@ const requireRole = (user, role) => {
   }
 };
 
-const normalizeText = (value) => {
-  if (value === null || value === undefined) {
-    return null;
-  }
+const normalizeText = (value) =>
+  value === null || value === undefined ? null : value.trim() || null;
 
-  return value.trim() || null;
-};
-
-const normalizeRoomData = (roomData) => {
-  const normalized = {};
-
-  ['room_number', 'room_type', 'floor', 'description'].forEach((field) => {
-    if (Object.hasOwn(roomData, field)) {
-      normalized[field] = normalizeText(roomData[field]);
-    }
-  });
-
-  if (Object.hasOwn(roomData, 'capacity')) {
-    normalized.capacity = Number(roomData.capacity);
-  }
-
-  return normalized;
-};
+const pagination = (options, total) => ({
+  page: options.page,
+  limit: options.limit,
+  total,
+  totalPages: total === 0 ? 0 : Math.ceil(total / options.limit),
+});
 
 const listRooms = async (user, options) => {
   requireRole(user, ADMIN_ROLE);
-  const rooms = await roomModel.listRooms(options);
-  const total = await roomModel.countRooms(options);
+  const [rooms, total] = await Promise.all([
+    roomModel.listRooms(options),
+    roomModel.countRooms(options),
+  ]);
 
-  return {
-    rooms,
-    pagination: {
-      page: options.page,
-      limit: options.limit,
-      total,
-      totalPages: total === 0 ? 0 : Math.ceil(total / options.limit),
-    },
-  };
+  return { rooms, pagination: pagination(options, total) };
 };
 
 const getRoom = async (user, roomId) => {
@@ -78,16 +56,138 @@ const getRoom = async (user, roomId) => {
   return room;
 };
 
+const requireActiveRoomType = async (roomTypeId, database) => {
+  const roomType = await roomTypeModel.findRoomTypeById(
+    roomTypeId,
+    database,
+    true
+  );
+
+  if (!roomType) {
+    throw new AppError('Room type was not found', 404);
+  }
+  if (roomType.status !== 'active') {
+    throw new AppError('Inactive room types cannot generate rooms', 409);
+  }
+
+  return roomType;
+};
+
+const conflictError = (roomCodes) =>
+  new AppError('One or more room codes already exist', 409, [
+    {
+      field: 'room_codes',
+      message: `Conflicting room codes: ${roomCodes.join(', ')}`,
+    },
+  ]);
+
 const createRoom = async (user, roomData) => {
   requireRole(user, ADMIN_ROLE);
 
   try {
-    return await roomModel.createRoom(normalizeRoomData(roomData));
+    return await roomModel.withTransaction(async (database) => {
+      const roomType = await requireActiveRoomType(
+        roomData.room_type_id,
+        database
+      );
+      const roomCode = generateRoomCode(
+        roomType.code,
+        roomData.floor_number,
+        roomData.room_number
+      );
+      const generatedRooms = [
+        {
+          roomCode,
+          roomNumber: Number(roomData.room_number),
+        },
+      ];
+      const conflicts = await roomModel.findRoomConflicts(
+        roomType.id,
+        Number(roomData.floor_number),
+        generatedRooms,
+        database
+      );
+
+      if (conflicts.length > 0) {
+        throw conflictError(conflicts);
+      }
+
+      return roomModel.createRoom(
+        {
+          room_type_id: roomType.id,
+          floor_number: Number(roomData.floor_number),
+          room_number: Number(roomData.room_number),
+          room_code: roomCode,
+          capacity: roomType.default_capacity,
+          description: normalizeText(roomData.description),
+        },
+        database
+      );
+    });
   } catch (error) {
     if (error.code === '23505') {
-      throw new AppError('Room number already exists', 409);
+      throw new AppError('Room code already exists', 409);
     }
+    throw error;
+  }
+};
 
+const createRoomsBulk = async (user, data) => {
+  requireRole(user, ADMIN_ROLE);
+
+  try {
+    return await roomModel.withTransaction(async (database) => {
+      const roomType = await requireActiveRoomType(data.room_type_id, database);
+      const floorNumber = Number(data.floor_number);
+      const generatedRooms = generateRoomCodes(
+        roomType.code,
+        floorNumber,
+        data.starting_room_number,
+        data.quantity
+      );
+      const conflicts = await roomModel.findRoomConflicts(
+        roomType.id,
+        floorNumber,
+        generatedRooms,
+        database
+      );
+
+      if (conflicts.length > 0) {
+        throw conflictError(conflicts);
+      }
+
+      await roomModel.createRooms(
+        generatedRooms.map((room) => ({
+          room_type_id: roomType.id,
+          floor_number: floorNumber,
+          room_number: room.roomNumber,
+          room_code: room.roomCode,
+          capacity: roomType.default_capacity,
+          description: null,
+        })),
+        database
+      );
+
+      const roomCodes = generatedRooms.map((room) => room.roomCode);
+
+      return {
+        created_count: roomCodes.length,
+        floor_number: floorNumber,
+        room_type: {
+          id: roomType.id,
+          code: roomType.code,
+          name: roomType.name,
+          default_capacity: roomType.default_capacity,
+        },
+        first_room_code: roomCodes[0],
+        last_room_code: roomCodes.at(-1),
+        room_codes: roomCodes,
+      };
+    });
+  } catch (error) {
+    if (error.code === '23505') {
+      throw new AppError('One or more room codes already exist', 409);
+    }
     throw error;
   }
 };
@@ -100,13 +200,20 @@ const updateRoom = async (user, roomId, roomData) => {
     throw new AppError('Room was not found', 404);
   }
 
-  const normalizedData = normalizeRoomData(roomData);
+  const normalizedData = {};
 
-  if (
-    normalizedData.capacity !== undefined &&
-    normalizedData.capacity < existingRoom.current_occupancy
-  ) {
-    throw new AppError('Room capacity cannot be below current occupancy', 409);
+  if (Object.hasOwn(roomData, 'capacity')) {
+    normalizedData.capacity = Number(roomData.capacity);
+
+    if (normalizedData.capacity < existingRoom.current_occupancy) {
+      throw new AppError(
+        'Room capacity cannot be below current occupancy',
+        409
+      );
+    }
+  }
+  if (Object.hasOwn(roomData, 'description')) {
+    normalizedData.description = normalizeText(roomData.description);
   }
 
   return roomModel.updateRoom(roomId, normalizedData);
@@ -115,8 +222,8 @@ const updateRoom = async (user, roomId, roomData) => {
 const updateRoomStatus = async (user, roomId, status) => {
   requireRole(user, ADMIN_ROLE);
 
-  if (!ROOM_STATUSES.has(status)) {
-    throw new AppError('Room status is not supported', 400);
+  if (!ROOM_OPERATIONAL_STATUSES.has(status)) {
+    throw new AppError('Room operational status is not supported', 400);
   }
 
   const room = await roomModel.findRoomById(roomId);
@@ -124,17 +231,8 @@ const updateRoomStatus = async (user, roomId, status) => {
   if (!room) {
     throw new AppError('Room was not found', 404);
   }
-
-  if (room.status === status) {
-    throw new AppError('Room already has this status', 409);
-  }
-
-  if (status === 'available' && room.current_occupancy > 0) {
-    throw new AppError('An occupied room cannot be marked available', 409);
-  }
-
-  if (status === 'full' && room.current_occupancy < room.capacity) {
-    throw new AppError('Room occupancy has not reached capacity', 409);
+  if (room.operational_status === status) {
+    throw new AppError('Room already has this operational status', 409);
   }
 
   return roomModel.updateRoomStatus(roomId, status);
@@ -153,27 +251,20 @@ const getMyAllocation = async (user) => {
 
 const listAllocations = async (user, options) => {
   requireRole(user, ADMIN_ROLE);
-  const allocations = await roomModel.listAllocations(options);
-  const total = await roomModel.countAllocations(options);
+  const [allocations, total] = await Promise.all([
+    roomModel.listAllocations(options),
+    roomModel.countAllocations(options),
+  ]);
 
-  return {
-    allocations,
-    pagination: {
-      page: options.page,
-      limit: options.limit,
-      total,
-      totalPages: total === 0 ? 0 : Math.ceil(total / options.limit),
-    },
-  };
+  return { allocations, pagination: pagination(options, total) };
 };
 
 const ensureRoomCanReceiveAllocation = (room) => {
   if (!room) {
     throw new AppError('Room was not found', 404);
   }
-
   if (
-    BLOCKED_ALLOCATION_STATUSES.has(room.status) ||
+    room.operational_status !== 'active' ||
     room.current_occupancy >= room.capacity
   ) {
     throw new AppError('Room is not available for allocation', 409);
@@ -213,17 +304,17 @@ const createAllocation = async (user, allocationData) => {
         {
           ...allocationData,
           allocated_by: user.id,
+          monthly_rate_at_allocation: room.monthly_rate,
           notes: normalizeText(allocationData.notes),
         },
         database
       );
-      await roomModel.adjustRoomOccupancy(room.id, 1, database);
       await notificationService.createNotification(
         {
           user_id: student.user_id,
           notification_type: 'room_allocation',
           title: 'Room allocated',
-          message: `You have been allocated to room ${room.room_number}.`,
+          message: `You have been allocated to room ${room.room_code}.`,
           related_entity_type: 'room_allocation',
           related_entity_id: allocationId,
         },
@@ -257,7 +348,6 @@ const updateAllocation = async (user, allocationId, allocationData) => {
     if (!allocation) {
       throw new AppError('Room allocation was not found', 404);
     }
-
     if (allocation.allocation_status !== 'active') {
       throw new AppError('Only an active allocation can be changed', 409);
     }
@@ -278,10 +368,7 @@ const updateAllocation = async (user, allocationId, allocationData) => {
         database
       );
       ensureRoomCanReceiveAllocation(targetRoom);
-
-      await roomModel.lockRoomById(allocation.room_id, database);
-      await roomModel.adjustRoomOccupancy(allocation.room_id, -1, database);
-      await roomModel.adjustRoomOccupancy(targetRoom.id, 1, database);
+      normalizedData.monthly_rate_at_allocation = targetRoom.monthly_rate;
     }
 
     await roomModel.updateAllocationRecord(
@@ -306,12 +393,10 @@ const endAllocation = async (user, allocationId, endData) => {
     if (!allocation) {
       throw new AppError('Room allocation was not found', 404);
     }
-
     if (allocation.allocation_status !== 'active') {
       throw new AppError('Room allocation is not active', 409);
     }
 
-    await roomModel.lockRoomById(allocation.room_id, database);
     await roomModel.finishAllocation(
       allocationId,
       {
@@ -321,21 +406,21 @@ const endAllocation = async (user, allocationId, endData) => {
       },
       database
     );
-    await roomModel.adjustRoomOccupancy(allocation.room_id, -1, database);
 
     return roomModel.findAllocationById(allocationId, database);
   });
 };
 
 module.exports = {
-  listRooms,
-  getRoom,
+  createAllocation,
   createRoom,
+  createRoomsBulk,
+  endAllocation,
+  getMyAllocation,
+  getRoom,
+  listAllocations,
+  listRooms,
+  updateAllocation,
   updateRoom,
   updateRoomStatus,
-  getMyAllocation,
-  listAllocations,
-  createAllocation,
-  updateAllocation,
-  endAllocation,
 };
