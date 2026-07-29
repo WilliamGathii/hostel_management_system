@@ -843,12 +843,13 @@ Timestamps:
 5. Room occupancy, calculated from active allocations, must not exceed room capacity.
 6. Room codes and room type, floor, and room number combinations must be unique.
 7. Rooms under maintenance or inactive cannot receive new allocations.
-8. Only Admin users can create, change, or end room allocations.
-9. Maintenance requests must belong to a valid student and room.
-10. Only assigned Maintenance Staff or Admin users should update maintenance request progress.
-11. Only Admin users can approve or reject visitors.
-12. Only approved visitors can be verified by Security Staff.
-13. Security Staff cannot approve or reject visitors.
-14. Payment records do not represent real money transfers.
-15. Important Admin and staff actions should create audit logs.
-16. Password hashes should be stored, but plain passwords must never be stored.
+8. A room may be deleted only when it has no allocation or maintenance history.
+9. Only Admin users can create, change, or end room allocations.
+10. Maintenance requests must belong to a valid student and room.
+11. Only assigned Maintenance Staff or Admin users should update maintenance request progress.
+12. Only Admin users can approve or reject visitors.
+13. Only approved visitors can be verified by Security Staff.
+14. Security Staff cannot approve or reject visitors.
+15. Payment records do not represent real money transfers.
+16. Important Admin and staff actions should create audit logs.
+17. Password hashes should be stored, but plain passwords must never be stored.

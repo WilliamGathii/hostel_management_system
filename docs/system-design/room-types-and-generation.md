@@ -61,6 +61,17 @@ When Admin creates or changes an allocation, the current room-type monthly rate
 is saved as `monthly_rate_at_allocation`. Later room-type rate changes do not
 change that saved value.
 
+## Floor View and Room Deletion
+
+The Admin room overview shows floors first. Each floor summary uses saved room
+and active-allocation data. Selecting a floor opens the room list and its
+search and status filters.
+
+Admin may permanently delete a room that was created by mistake only when it
+has no room-allocation or maintenance-request history. A room with related
+history must be kept and marked `inactive` instead. This protects historical
+records.
+
 ## Current Limitations
 
 Room numbers stop at 99 for each room type and floor. This feature does not

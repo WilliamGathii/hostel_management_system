@@ -22,6 +22,7 @@ router.get(
   handleRoomValidation,
   roomController.listRooms
 );
+router.get('/floors', roomController.listFloors);
 router.post(
   '/bulk',
   roomBulkCreateValidation,
@@ -53,6 +54,12 @@ router.patch(
   roomStatusValidation,
   handleRoomValidation,
   roomController.updateRoomStatus
+);
+router.delete(
+  '/:roomId',
+  roomIdentifierValidation,
+  handleRoomValidation,
+  roomController.deleteRoom
 );
 
 module.exports = router;

@@ -10,6 +10,10 @@ in a single batch, and update room details and operational status. Room codes
 are generated from the room-type code, floor, and two-digit room number.
 Occupancy is calculated from active allocations.
 
+The room overview lists floors before room details. Admin users may delete an
+unused room created by mistake. Rooms with allocation or maintenance history
+must be marked inactive instead so their records remain complete.
+
 Admin users control all allocations. A Student can have only one active
 allocation, and a room cannot be allocated beyond its capacity. A room under
 maintenance or inactive cannot receive a new allocation. The room type's

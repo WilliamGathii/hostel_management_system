@@ -2,11 +2,13 @@ const request = require('supertest');
 
 jest.mock('../../src/services/room.service', () => ({
   listRooms: jest.fn(),
+  listFloors: jest.fn(),
   getRoom: jest.fn(),
   createRoom: jest.fn(),
   createRoomsBulk: jest.fn(),
   updateRoom: jest.fn(),
   updateRoomStatus: jest.fn(),
+  deleteRoom: jest.fn(),
   getMyAllocation: jest.fn(),
   listAllocations: jest.fn(),
   createAllocation: jest.fn(),
@@ -75,6 +77,17 @@ describe('room and allocation routes', () => {
       rooms: [room],
       pagination: { page: 1, limit: 20, total: 1, totalPages: 1 },
     });
+    roomService.listFloors.mockResolvedValue([
+      {
+        floor_number: 1,
+        room_count: 1,
+        total_capacity: 2,
+        current_occupancy: 0,
+        available_room_count: 1,
+        maintenance_room_count: 0,
+        inactive_room_count: 0,
+      },
+    ]);
     roomService.getRoom.mockResolvedValue(room);
     roomService.createRoom.mockResolvedValue(room);
     roomService.createRoomsBulk.mockResolvedValue({
@@ -93,6 +106,11 @@ describe('room and allocation routes', () => {
     roomService.updateRoomStatus.mockResolvedValue({
       ...room,
       status: 'inactive',
+    });
+    roomService.deleteRoom.mockResolvedValue({
+      id: roomId,
+      room_code: 'A101',
+      floor_number: 1,
     });
     roomService.getMyAllocation.mockResolvedValue(allocation);
     roomService.listAllocations.mockResolvedValue({
@@ -126,6 +144,28 @@ describe('room and allocation routes', () => {
       expect(response.status).toBe(403);
     }
   );
+
+  test('Admin can list floor summaries', async () => {
+    const response = await request(app)
+      .get('/api/v1/rooms/floors')
+      .set('Authorization', authorization(users.admin));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.floors).toEqual([
+      expect.objectContaining({ floor_number: 1, room_count: 1 }),
+    ]);
+    expect(roomService.listFloors).toHaveBeenCalledWith(
+      expect.objectContaining({ role: 'admin' })
+    );
+  });
+
+  test('Student cannot list floor summaries', async () => {
+    const response = await request(app)
+      .get('/api/v1/rooms/floors')
+      .set('Authorization', authorization(users.student));
+
+    expect(response.status).toBe(403);
+  });
 
   test('Admin can create a room', async () => {
     const response = await request(app)
@@ -227,6 +267,22 @@ describe('room and allocation routes', () => {
       expect.objectContaining({ role: 'admin' }),
       roomId,
       'inactive'
+    );
+  });
+
+  test('Admin can delete an unused room', async () => {
+    const response = await request(app)
+      .delete(`/api/v1/rooms/${roomId}`)
+      .set('Authorization', authorization(users.admin));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.room).toMatchObject({
+      id: roomId,
+      room_code: 'A101',
+    });
+    expect(roomService.deleteRoom).toHaveBeenCalledWith(
+      expect.objectContaining({ role: 'admin' }),
+      roomId
     );
   });
 

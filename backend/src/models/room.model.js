@@ -199,6 +199,44 @@ const countRooms = async (options, database = getDatabase()) => {
   return result.rows[0]?.total || 0;
 };
 
+const listFloorSummaries = async (database = getDatabase()) => {
+  const result = await database.query(
+    `WITH room_occupancy AS (
+       SELECT
+         r.id,
+         r.floor_number,
+         r.capacity,
+         r.operational_status,
+         COUNT(ra.id) FILTER (
+           WHERE ra.allocation_status = 'active'
+         )::integer AS current_occupancy
+       FROM rooms r
+       LEFT JOIN room_allocations ra ON ra.room_id = r.id
+       GROUP BY r.id
+     )
+     SELECT
+       floor_number,
+       COUNT(*)::integer AS room_count,
+       COALESCE(SUM(capacity), 0)::integer AS total_capacity,
+       COALESCE(SUM(current_occupancy), 0)::integer AS current_occupancy,
+       COUNT(*) FILTER (
+         WHERE operational_status = 'active'
+           AND current_occupancy < capacity
+       )::integer AS available_room_count,
+       COUNT(*) FILTER (
+         WHERE operational_status = 'under_maintenance'
+       )::integer AS maintenance_room_count,
+       COUNT(*) FILTER (
+         WHERE operational_status = 'inactive'
+       )::integer AS inactive_room_count
+     FROM room_occupancy
+     GROUP BY floor_number
+     ORDER BY floor_number ASC`
+  );
+
+  return result.rows;
+};
+
 const createRoom = async (roomData, database = getDatabase()) => {
   const result = await database.query(
     `INSERT INTO rooms (
@@ -302,6 +340,36 @@ const updateRoomStatus = async (roomId, status, database = getDatabase()) => {
   );
 
   return result.rowCount === 0 ? null : findRoomById(roomId, database);
+};
+
+const findRoomUsage = async (roomId, database = getDatabase()) => {
+  const result = await database.query(
+    `SELECT
+       (
+         SELECT COUNT(*)::integer
+         FROM room_allocations
+         WHERE room_id = $1
+       ) AS allocation_count,
+       (
+         SELECT COUNT(*)::integer
+         FROM maintenance_requests
+         WHERE room_id = $1
+       ) AS maintenance_count`,
+    [roomId]
+  );
+
+  return result.rows[0];
+};
+
+const deleteRoom = async (roomId, database = getDatabase()) => {
+  const result = await database.query(
+    `DELETE FROM rooms
+     WHERE id = $1
+     RETURNING id, room_code, floor_number`,
+    [roomId]
+  );
+
+  return result.rows[0] || null;
 };
 
 const findStudentById = async (studentId, database = getDatabase()) => {
@@ -500,16 +568,19 @@ module.exports = {
   countRooms,
   createRoom,
   createRooms,
+  deleteRoom,
   findActiveAllocationByStudent,
   findAllocationById,
   findCurrentAllocationByUser,
   findRoomById,
   findRoomConflicts,
+  findRoomUsage,
   findStudentById,
   findStudentByUserId,
   finishAllocation,
   insertAllocation,
   listAllocations,
+  listFloorSummaries,
   listRooms,
   lockRoomById,
   updateAllocationRecord,

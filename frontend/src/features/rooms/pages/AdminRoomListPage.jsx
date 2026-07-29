@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  LuArrowLeft,
   LuBedDouble,
   LuBuilding2,
+  LuChevronRight,
   LuLayers3,
   LuPencil,
   LuPlus,
@@ -26,6 +28,7 @@ import { RoomTypeForm } from '../components/RoomTypeForm';
 import {
   createRoom,
   createRoomsBulk,
+  getRoomFloors,
   getRooms,
   getRoomTypes,
   updateRoomType,
@@ -63,16 +66,17 @@ function LoadingList({ label }) {
 }
 
 export function AdminRoomListPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') === 'types' ? 'types' : 'rooms';
+  const selectedFloor =
+    activeTab === 'rooms' ? searchParams.get('floor') || '' : '';
   const [roomTypes, setRoomTypes] = useState([]);
+  const [floorSummaries, setFloorSummaries] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [pagination, setPagination] = useState({});
   const [page, setPage] = useState(1);
-  const [knownFloors, setKnownFloors] = useState([]);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
-  const [floor, setFloor] = useState('');
   const [roomTypeId, setRoomTypeId] = useState('');
   const [operationalStatus, setOperationalStatus] = useState('');
   const [occupancyStatus, setOccupancyStatus] = useState('');
@@ -89,12 +93,23 @@ export function AdminRoomListPage() {
     setRoomTypes(Array.isArray(result) ? result : []);
   }, []);
 
+  const loadFloors = useCallback(async () => {
+    const result = await getRoomFloors();
+    setFloorSummaries(Array.isArray(result) ? result : []);
+  }, []);
+
   const loadRooms = useCallback(async () => {
+    if (!selectedFloor) {
+      setRooms([]);
+      setPagination({});
+      return;
+    }
+
     const result = await getRooms({
       page,
       limit: 50,
       search,
-      floor,
+      floor: selectedFloor,
       room_type_id: roomTypeId,
       operational_status: operationalStatus,
       occupancy_status: occupancyStatus,
@@ -102,28 +117,27 @@ export function AdminRoomListPage() {
     const loadedRooms = Array.isArray(result.rooms) ? result.rooms : [];
     setRooms(loadedRooms);
     setPagination(result.pagination || {});
-    setKnownFloors((current) =>
-      [
-        ...new Set([
-          ...current,
-          ...loadedRooms.map((room) => Number(room.floor_number)),
-        ]),
-      ].sort((left, right) => left - right)
-    );
-  }, [floor, occupancyStatus, operationalStatus, page, roomTypeId, search]);
+  }, [
+    occupancyStatus,
+    operationalStatus,
+    page,
+    roomTypeId,
+    search,
+    selectedFloor,
+  ]);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
     setHasError(false);
 
     try {
-      await Promise.all([loadRoomTypes(), loadRooms()]);
+      await Promise.all([loadRoomTypes(), loadFloors(), loadRooms()]);
     } catch {
       setHasError(true);
     } finally {
       setIsLoading(false);
     }
-  }, [loadRoomTypes, loadRooms]);
+  }, [loadFloors, loadRoomTypes, loadRooms]);
 
   useEffect(() => {
     loadData();
@@ -155,22 +169,58 @@ export function AdminRoomListPage() {
     setSearch(searchInput.trim());
   };
 
+  const openFloor = (floorNumber, preserveNotice = false) => {
+    setPage(1);
+    setSearchInput('');
+    setSearch('');
+    setRoomTypeId('');
+    setOperationalStatus('');
+    setOccupancyStatus('');
+    if (!preserveNotice) {
+      setNotice('');
+    }
+    setSearchParams({
+      tab: 'rooms',
+      floor: String(floorNumber),
+    });
+  };
+
+  const showAllFloors = () => {
+    setPage(1);
+    setSearchInput('');
+    setSearch('');
+    setRoomTypeId('');
+    setOperationalStatus('');
+    setOccupancyStatus('');
+    setSearchParams({ tab: 'rooms' });
+  };
+
   const submitSingleRoom = async (roomData) => {
     const room = await createRoom(roomData);
     setOpenForm('');
-    setFloor(String(room.floor_number));
     setNotice(`Room ${room.room_code} created successfully.`);
-    await loadRooms();
+    await loadFloors();
+
+    if (selectedFloor === String(room.floor_number)) {
+      await loadRooms();
+    } else {
+      openFloor(room.floor_number, true);
+    }
   };
 
   const finishBulkCreation = async (result) => {
     setOpenForm('');
     setPage(1);
-    setFloor(String(result.floor_number));
     setNotice(
       `${result.created_count} rooms created from ${result.first_room_code} to ${result.last_room_code}.`
     );
-    await loadRooms();
+    await loadFloors();
+
+    if (selectedFloor === String(result.floor_number)) {
+      await loadRooms();
+    } else {
+      openFloor(result.floor_number, true);
+    }
   };
 
   const saveRoomType = async (roomTypeData) => {
@@ -207,7 +257,11 @@ export function AdminRoomListPage() {
             </Button>
           ) : null
         }
-        description="Organise approved room types and rooms by floor."
+        description={
+          selectedFloor
+            ? `Review and manage rooms on Floor ${selectedFloor}.`
+            : 'Organise approved room types and rooms by floor.'
+        }
         title="Room Management"
       />
 
@@ -437,244 +491,341 @@ export function AdminRoomListPage() {
           ) : null}
 
           <Card>
-            <form
-              className="grid gap-4 rounded-card bg-page p-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[minmax(12rem,1fr)_7rem_10rem_10rem_10rem_auto]"
-              onSubmit={submitSearch}
-              role="search"
-            >
-              <div>
-                <label
-                  className="mb-1.5 block text-sm font-semibold text-text"
-                  htmlFor="room-search"
-                >
-                  Search rooms
-                </label>
-                <input
-                  className="min-h-11 w-full rounded-card border border-border bg-card px-3.5 text-sm outline-none focus:border-primary focus:ring-3 focus:ring-primary-soft"
-                  id="room-search"
-                  onChange={(event) => setSearchInput(event.target.value)}
-                  placeholder="Room code or room type"
-                  type="search"
-                  value={searchInput}
-                />
-              </div>
-              <div>
-                <label
-                  className="mb-1.5 block text-sm font-semibold text-text"
-                  htmlFor="room-floor-filter"
-                >
-                  Floor
-                </label>
-                <select
-                  className="min-h-11 w-full rounded-card border border-border bg-card px-3 text-sm outline-none focus:border-primary focus:ring-3 focus:ring-primary-soft"
-                  id="room-floor-filter"
-                  onChange={(event) => {
-                    setFloor(event.target.value);
-                    setPage(1);
-                  }}
-                  value={floor}
-                >
-                  <option value="">All floors</option>
-                  {knownFloors.map((floorNumber) => (
-                    <option key={floorNumber} value={floorNumber}>
-                      {floorNumber}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label
-                  className="mb-1.5 block text-sm font-semibold text-text"
-                  htmlFor="room-type-filter"
-                >
-                  Room type
-                </label>
-                <select
-                  className="min-h-11 w-full rounded-card border border-border bg-card px-3 text-sm outline-none focus:border-primary focus:ring-3 focus:ring-primary-soft"
-                  id="room-type-filter"
-                  onChange={(event) => {
-                    setRoomTypeId(event.target.value);
-                    setPage(1);
-                  }}
-                  value={roomTypeId}
-                >
-                  <option value="">All types</option>
-                  {roomTypes.map((roomType) => (
-                    <option key={roomType.id} value={roomType.id}>
-                      {roomType.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label
-                  className="mb-1.5 block text-sm font-semibold text-text"
-                  htmlFor="room-operational-filter"
-                >
-                  Operation
-                </label>
-                <select
-                  className="min-h-11 w-full rounded-card border border-border bg-card px-3 text-sm outline-none focus:border-primary focus:ring-3 focus:ring-primary-soft"
-                  id="room-operational-filter"
-                  onChange={(event) => {
-                    setOperationalStatus(event.target.value);
-                    setPage(1);
-                  }}
-                  value={operationalStatus}
-                >
-                  <option value="">All states</option>
-                  <option value="active">Active</option>
-                  <option value="under_maintenance">Under maintenance</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-              <div>
-                <label
-                  className="mb-1.5 block text-sm font-semibold text-text"
-                  htmlFor="room-occupancy-filter"
-                >
-                  Occupancy
-                </label>
-                <select
-                  className="min-h-11 w-full rounded-card border border-border bg-card px-3 text-sm outline-none focus:border-primary focus:ring-3 focus:ring-primary-soft"
-                  id="room-occupancy-filter"
-                  onChange={(event) => {
-                    setOccupancyStatus(event.target.value);
-                    setPage(1);
-                  }}
-                  value={occupancyStatus}
-                >
-                  <option value="">All occupancy</option>
-                  <option value="available">Available</option>
-                  <option value="partially_occupied">Partially occupied</option>
-                  <option value="full">Full</option>
-                </select>
-              </div>
-              <Button className="self-end" type="submit">
-                <LuSearch aria-hidden="true" className="size-4" />
-                Search
-              </Button>
-            </form>
-
-            <div className="mt-6">
-              {isLoading ? (
-                <LoadingList label="Loading rooms" />
-              ) : hasError ? (
-                <ErrorState
-                  description="Room information could not be loaded."
-                  onRetry={loadData}
-                  title="Rooms unavailable"
-                />
-              ) : rooms.length === 0 ? (
-                <EmptyState
-                  description={
-                    search ||
-                    floor ||
-                    roomTypeId ||
-                    operationalStatus ||
-                    occupancyStatus
-                      ? 'Try different room filters.'
-                      : 'Generate the first hostel rooms by floor and type.'
-                  }
-                  Icon={LuBedDouble}
-                  title={
-                    search ||
-                    floor ||
-                    roomTypeId ||
-                    operationalStatus ||
-                    occupancyStatus
-                      ? 'No rooms matched your filters.'
-                      : 'No rooms have been added.'
-                  }
-                />
-              ) : (
-                <div className="space-y-8">
-                  {groupedRooms.map((group) => (
-                    <section
-                      aria-labelledby={`room-group-${group.floorNumber}-${group.roomTypeCode}`}
-                      key={`${group.floorNumber}-${group.roomTypeCode}`}
-                    >
-                      <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border pb-3">
-                        <div>
-                          <p className="text-xs font-semibold text-information">
-                            Floor {group.floorNumber}
-                          </p>
-                          <h2
-                            className="mt-1 text-lg font-bold text-text"
-                            id={`room-group-${group.floorNumber}-${group.roomTypeCode}`}
-                          >
-                            {group.roomTypeName}
-                          </h2>
-                        </div>
-                        <p className="text-sm text-muted">
-                          {group.rooms.length} room
-                          {group.rooms.length === 1 ? '' : 's'}
-                        </p>
-                      </div>
-                      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {group.rooms.map((room) => (
-                          <article
-                            className="rounded-card bg-page p-4"
-                            key={room.id}
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <p className="font-mono text-lg font-bold text-primary">
-                                  {room.room_code}
-                                </p>
-                                <p className="text-sm text-muted">
-                                  {formatCurrency(room.monthly_rate)}
-                                </p>
-                              </div>
-                              <StatusChip
-                                variant={statusVariant[room.occupancy_status]}
-                              >
-                                {formatLabel(room.occupancy_status)}
-                              </StatusChip>
-                            </div>
-                            <p className="mt-3 text-sm text-text">
-                              {room.current_occupancy} of {room.capacity}{' '}
-                              occupied
-                            </p>
-                            <p className="mt-1 text-xs text-muted">
-                              {formatLabel(room.operational_status)}
-                            </p>
-                            <Link
-                              className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-card bg-periwinkle-light px-4 text-sm font-semibold text-primary hover:bg-periwinkle focus-visible:outline-2 focus-visible:outline-primary"
-                              to={`/admin/rooms/${room.id}`}
-                            >
-                              View room
-                            </Link>
-                          </article>
-                        ))}
-                      </div>
-                    </section>
-                  ))}
+            {!selectedFloor ? (
+              <>
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg font-bold text-text">
+                      Hostel floors
+                    </h2>
+                    <p className="mt-1 text-sm text-muted">
+                      Choose a floor to view and manage its rooms.
+                    </p>
+                  </div>
+                  {!isLoading && floorSummaries.length > 0 ? (
+                    <p className="text-sm font-semibold text-muted">
+                      {floorSummaries.length} floor
+                      {floorSummaries.length === 1 ? '' : 's'}
+                    </p>
+                  ) : null}
                 </div>
-              )}
-            </div>
 
-            {pagination.totalPages > 1 ? (
-              <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
-                <Button
-                  disabled={page <= 1}
-                  onClick={() => setPage((value) => value - 1)}
-                  variant="secondary"
+                <div className="mt-6">
+                  {isLoading ? (
+                    <LoadingList label="Loading floors" />
+                  ) : hasError ? (
+                    <ErrorState
+                      description="Floor information could not be loaded."
+                      onRetry={loadData}
+                      title="Floors unavailable"
+                    />
+                  ) : floorSummaries.length === 0 ? (
+                    <EmptyState
+                      description="Generate the first hostel rooms to create a floor."
+                      Icon={LuBuilding2}
+                      title="No floors have been added."
+                    />
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                      {floorSummaries.map((floorSummary) => (
+                        <button
+                          aria-label={`View rooms on Floor ${floorSummary.floor_number}`}
+                          className="group rounded-card border border-border bg-page p-5 text-left transition hover:border-periwinkle hover:bg-periwinkle-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                          key={floorSummary.floor_number}
+                          onClick={() => openFloor(floorSummary.floor_number)}
+                          type="button"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <p className="text-xs font-semibold text-information">
+                                Floor
+                              </p>
+                              <h3 className="mt-1 text-xl font-bold text-text">
+                                Floor {floorSummary.floor_number}
+                              </h3>
+                              <p className="mt-1 text-sm text-muted">
+                                {floorSummary.room_count} room
+                                {floorSummary.room_count === 1 ? '' : 's'}
+                              </p>
+                            </div>
+                            <LuChevronRight
+                              aria-hidden="true"
+                              className="mt-1 size-5 text-muted transition group-hover:translate-x-0.5 group-hover:text-primary"
+                            />
+                          </div>
+                          <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border pt-4 text-sm">
+                            <div>
+                              <dt className="text-muted">Occupancy</dt>
+                              <dd className="mt-0.5 font-semibold text-text">
+                                {floorSummary.current_occupancy} of{' '}
+                                {floorSummary.total_capacity} beds
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-muted">Available rooms</dt>
+                              <dd className="mt-0.5 font-semibold text-success">
+                                {floorSummary.available_room_count}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-muted">Maintenance</dt>
+                              <dd className="mt-0.5 font-semibold text-text">
+                                {floorSummary.maintenance_room_count}
+                              </dd>
+                            </div>
+                            <div>
+                              <dt className="text-muted">Inactive</dt>
+                              <dd className="mt-0.5 font-semibold text-text">
+                                {floorSummary.inactive_room_count}
+                              </dd>
+                            </div>
+                          </dl>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <Button onClick={showAllFloors} variant="ghost">
+                      <LuArrowLeft aria-hidden="true" className="size-4" />
+                      All Floors
+                    </Button>
+                    <div className="border-l border-border pl-4">
+                      <h2 className="text-lg font-bold text-text">
+                        Floor {selectedFloor}
+                      </h2>
+                      <p className="text-sm text-muted">
+                        Rooms grouped by type
+                      </p>
+                    </div>
+                  </div>
+                  {!isLoading && pagination.total ? (
+                    <p className="text-sm font-semibold text-muted">
+                      {pagination.total} room
+                      {pagination.total === 1 ? '' : 's'}
+                    </p>
+                  ) : null}
+                </div>
+
+                <form
+                  className="mt-6 grid gap-4 rounded-card bg-page p-4 md:grid-cols-2 xl:grid-cols-[minmax(12rem,1fr)_11rem_11rem_11rem_auto]"
+                  onSubmit={submitSearch}
+                  role="search"
                 >
-                  Previous
-                </Button>
-                <p className="text-sm text-muted">
-                  Page {page} of {pagination.totalPages}
-                </p>
-                <Button
-                  disabled={page >= pagination.totalPages}
-                  onClick={() => setPage((value) => value + 1)}
-                  variant="secondary"
-                >
-                  Next
-                </Button>
-              </div>
-            ) : null}
+                  <div>
+                    <label
+                      className="mb-1.5 block text-sm font-semibold text-text"
+                      htmlFor="room-search"
+                    >
+                      Search rooms
+                    </label>
+                    <input
+                      className="min-h-11 w-full rounded-card border border-border bg-card px-3.5 text-sm outline-none focus:border-primary focus:ring-3 focus:ring-primary-soft"
+                      id="room-search"
+                      onChange={(event) => setSearchInput(event.target.value)}
+                      placeholder="Room code or room type"
+                      type="search"
+                      value={searchInput}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      className="mb-1.5 block text-sm font-semibold text-text"
+                      htmlFor="room-type-filter"
+                    >
+                      Room type
+                    </label>
+                    <select
+                      className="min-h-11 w-full rounded-card border border-border bg-card px-3 text-sm outline-none focus:border-primary focus:ring-3 focus:ring-primary-soft"
+                      id="room-type-filter"
+                      onChange={(event) => {
+                        setRoomTypeId(event.target.value);
+                        setPage(1);
+                      }}
+                      value={roomTypeId}
+                    >
+                      <option value="">All types</option>
+                      {roomTypes.map((roomType) => (
+                        <option key={roomType.id} value={roomType.id}>
+                          {roomType.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label
+                      className="mb-1.5 block text-sm font-semibold text-text"
+                      htmlFor="room-operational-filter"
+                    >
+                      Operation
+                    </label>
+                    <select
+                      className="min-h-11 w-full rounded-card border border-border bg-card px-3 text-sm outline-none focus:border-primary focus:ring-3 focus:ring-primary-soft"
+                      id="room-operational-filter"
+                      onChange={(event) => {
+                        setOperationalStatus(event.target.value);
+                        setPage(1);
+                      }}
+                      value={operationalStatus}
+                    >
+                      <option value="">All states</option>
+                      <option value="active">Active</option>
+                      <option value="under_maintenance">
+                        Under maintenance
+                      </option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label
+                      className="mb-1.5 block text-sm font-semibold text-text"
+                      htmlFor="room-occupancy-filter"
+                    >
+                      Occupancy
+                    </label>
+                    <select
+                      className="min-h-11 w-full rounded-card border border-border bg-card px-3 text-sm outline-none focus:border-primary focus:ring-3 focus:ring-primary-soft"
+                      id="room-occupancy-filter"
+                      onChange={(event) => {
+                        setOccupancyStatus(event.target.value);
+                        setPage(1);
+                      }}
+                      value={occupancyStatus}
+                    >
+                      <option value="">All occupancy</option>
+                      <option value="available">Available</option>
+                      <option value="partially_occupied">
+                        Partially occupied
+                      </option>
+                      <option value="full">Full</option>
+                    </select>
+                  </div>
+                  <Button className="self-end" type="submit">
+                    <LuSearch aria-hidden="true" className="size-4" />
+                    Search
+                  </Button>
+                </form>
+
+                <div className="mt-6">
+                  {isLoading ? (
+                    <LoadingList label="Loading rooms" />
+                  ) : hasError ? (
+                    <ErrorState
+                      description="Room information could not be loaded."
+                      onRetry={loadData}
+                      title="Rooms unavailable"
+                    />
+                  ) : rooms.length === 0 ? (
+                    <EmptyState
+                      description={
+                        search ||
+                        roomTypeId ||
+                        operationalStatus ||
+                        occupancyStatus
+                          ? 'Try different room filters.'
+                          : 'Generate rooms for this floor when they are ready.'
+                      }
+                      Icon={LuBedDouble}
+                      title={
+                        search ||
+                        roomTypeId ||
+                        operationalStatus ||
+                        occupancyStatus
+                          ? 'No rooms matched your filters.'
+                          : `No rooms have been added to Floor ${selectedFloor}.`
+                      }
+                    />
+                  ) : (
+                    <div className="space-y-8">
+                      {groupedRooms.map((group) => (
+                        <section
+                          aria-labelledby={`room-group-${group.floorNumber}-${group.roomTypeCode}`}
+                          key={`${group.floorNumber}-${group.roomTypeCode}`}
+                        >
+                          <div className="flex flex-wrap items-end justify-between gap-2 border-b border-border pb-3">
+                            <h2
+                              className="text-lg font-bold text-text"
+                              id={`room-group-${group.floorNumber}-${group.roomTypeCode}`}
+                            >
+                              {group.roomTypeName}
+                            </h2>
+                            <p className="text-sm text-muted">
+                              {group.rooms.length} room
+                              {group.rooms.length === 1 ? '' : 's'}
+                            </p>
+                          </div>
+                          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            {group.rooms.map((room) => (
+                              <article
+                                className="rounded-card bg-page p-4"
+                                key={room.id}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <p className="font-mono text-lg font-bold text-primary">
+                                      {room.room_code}
+                                    </p>
+                                    <p className="text-sm text-muted">
+                                      {formatCurrency(room.monthly_rate)}
+                                    </p>
+                                  </div>
+                                  <StatusChip
+                                    variant={
+                                      statusVariant[room.occupancy_status]
+                                    }
+                                  >
+                                    {formatLabel(room.occupancy_status)}
+                                  </StatusChip>
+                                </div>
+                                <p className="mt-3 text-sm text-text">
+                                  {room.current_occupancy} of {room.capacity}{' '}
+                                  occupied
+                                </p>
+                                <p className="mt-1 text-xs text-muted">
+                                  {formatLabel(room.operational_status)}
+                                </p>
+                                <Link
+                                  className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-card bg-periwinkle-light px-4 text-sm font-semibold text-primary hover:bg-periwinkle focus-visible:outline-2 focus-visible:outline-primary"
+                                  to={`/admin/rooms/${room.id}`}
+                                >
+                                  View room
+                                </Link>
+                              </article>
+                            ))}
+                          </div>
+                        </section>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {pagination.totalPages > 1 ? (
+                  <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
+                    <Button
+                      disabled={page <= 1}
+                      onClick={() => setPage((value) => value - 1)}
+                      variant="secondary"
+                    >
+                      Previous
+                    </Button>
+                    <p className="text-sm text-muted">
+                      Page {page} of {pagination.totalPages}
+                    </p>
+                    <Button
+                      disabled={page >= pagination.totalPages}
+                      onClick={() => setPage((value) => value + 1)}
+                      variant="secondary"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                ) : null}
+              </>
+            )}
           </Card>
         </div>
       )}

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 vi.mock('../services/api-client', () => ({
   default: {
+    delete: vi.fn(),
     get: vi.fn(),
     post: vi.fn(),
     patch: vi.fn(),
@@ -13,9 +14,11 @@ import {
   createAllocation,
   createRoom,
   createRoomsBulk,
+  deleteRoom,
   endAllocation,
   getAllocations,
   getMyAllocation,
+  getRoomFloors,
   getRooms,
   getRoomTypes,
   updateRoomStatus,
@@ -55,6 +58,23 @@ describe('room service', () => {
         occupancy_status: 'available',
       },
     });
+  });
+
+  test('loads floor summaries and deletes a room', async () => {
+    apiClient.get.mockResolvedValue({
+      data: { floors: [{ floor_number: 9, room_count: 6 }] },
+    });
+    apiClient.delete.mockResolvedValue({
+      data: { room: { id: 'room-1', room_code: 'A901' } },
+    });
+
+    expect(await getRoomFloors()).toEqual([{ floor_number: 9, room_count: 6 }]);
+    expect(await deleteRoom('room-1')).toEqual({
+      id: 'room-1',
+      room_code: 'A901',
+    });
+    expect(apiClient.get).toHaveBeenCalledWith('/rooms/floors');
+    expect(apiClient.delete).toHaveBeenCalledWith('/rooms/room-1');
   });
 
   test('creates and updates rooms', async () => {

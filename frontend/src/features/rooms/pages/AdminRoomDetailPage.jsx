@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { LuArrowLeft } from 'react-icons/lu';
-import { Link, useParams } from 'react-router-dom';
+import { LuArrowLeft, LuTrash2 } from 'react-icons/lu';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { Button } from '../../../components/common/Button';
 import { Card } from '../../../components/common/Card';
+import { ConfirmDialog } from '../../../components/common/ConfirmDialog';
 import { PageContainer } from '../../../components/common/PageContainer';
 import { PageHeader } from '../../../components/common/PageHeader';
 import { StatusChip } from '../../../components/common/StatusChip';
@@ -13,6 +14,7 @@ import { Skeleton } from '../../../components/feedback/Skeleton';
 import { formatLabel } from '../../../utils/formatters';
 import { RoomForm } from '../components/RoomForm';
 import {
+  deleteRoom,
   getRoomById,
   updateRoom,
   updateRoomStatus,
@@ -20,12 +22,16 @@ import {
 
 export function AdminRoomDetailPage() {
   const { roomId } = useParams();
+  const navigate = useNavigate();
   const [room, setRoom] = useState(null);
   const [status, setStatus] = useState('');
   const [notice, setNotice] = useState('');
   const [statusError, setStatusError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingStatus, setIsSavingStatus] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [hasError, setHasError] = useState(false);
 
   const loadRoom = useCallback(async () => {
@@ -69,6 +75,21 @@ export function AdminRoomDetailPage() {
     }
   };
 
+  const confirmDelete = async () => {
+    setIsDeleting(true);
+    setDeleteError('');
+
+    try {
+      await deleteRoom(roomId);
+      navigate('/admin/rooms?tab=rooms', { replace: true });
+    } catch (error) {
+      setDeleteError(error.message || 'Room could not be deleted.');
+      setIsDeleteOpen(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <PageContainer>
@@ -96,7 +117,7 @@ export function AdminRoomDetailPage() {
         actions={
           <Link
             className="inline-flex min-h-11 items-center gap-2 rounded-card bg-periwinkle-light px-4 text-sm font-semibold text-primary"
-            to="/admin/rooms"
+            to={`/admin/rooms?tab=rooms&floor=${room.floor_number}`}
           >
             <LuArrowLeft aria-hidden="true" className="size-4" />
             Back to rooms
@@ -182,8 +203,43 @@ export function AdminRoomDetailPage() {
           >
             Update Status
           </Button>
+          <div className="mt-7 border-t border-border pt-6">
+            <h2 className="text-base font-bold text-text">Delete room</h2>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              Permanently remove this room only if it has no allocation or
+              maintenance history.
+            </p>
+            {deleteError ? (
+              <Alert className="mt-4" variant="error">
+                {deleteError}
+              </Alert>
+            ) : null}
+            <Button
+              className="mt-4 w-full"
+              onClick={() => {
+                setDeleteError('');
+                setIsDeleteOpen(true);
+              }}
+              variant="danger"
+            >
+              <LuTrash2 aria-hidden="true" className="size-4" />
+              Delete Room
+            </Button>
+          </div>
         </Card>
       </div>
+
+      {isDeleteOpen ? (
+        <ConfirmDialog
+          confirmLabel="Delete Room"
+          description={`Permanently delete Room ${room.room_code}? This is allowed only when the room has no allocation or maintenance history.`}
+          isLoading={isDeleting}
+          onCancel={() => setIsDeleteOpen(false)}
+          onConfirm={confirmDelete}
+          title="Delete this room?"
+          variant="danger"
+        />
+      ) : null}
     </PageContainer>
   );
 }

@@ -1,17 +1,23 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { Route, Routes } from 'react-router-dom';
 
 vi.mock('../features/rooms/services/room.service', () => ({
   createAllocation: vi.fn(),
   createRoom: vi.fn(),
   createRoomsBulk: vi.fn(),
+  deleteRoom: vi.fn(),
   endAllocation: vi.fn(),
   getAllocations: vi.fn(),
   getMyAllocation: vi.fn(),
+  getRoomById: vi.fn(),
+  getRoomFloors: vi.fn(),
   getRooms: vi.fn(),
   getRoomTypes: vi.fn(),
   updateAllocation: vi.fn(),
+  updateRoom: vi.fn(),
+  updateRoomStatus: vi.fn(),
   updateRoomType: vi.fn(),
   updateRoomTypeStatus: vi.fn(),
 }));
@@ -21,12 +27,16 @@ vi.mock('../features/students/services/student.service', () => ({
 
 import { BulkRoomForm } from '../features/rooms/components/BulkRoomForm';
 import { AdminAllocationPage } from '../features/rooms/pages/AdminAllocationPage';
+import { AdminRoomDetailPage } from '../features/rooms/pages/AdminRoomDetailPage';
 import { AdminRoomListPage } from '../features/rooms/pages/AdminRoomListPage';
 import { StudentRoomPage } from '../features/rooms/pages/StudentRoomPage';
 import {
   createRoomsBulk,
+  deleteRoom,
   getAllocations,
   getMyAllocation,
+  getRoomById,
+  getRoomFloors,
   getRooms,
   getRoomTypes,
 } from '../features/rooms/services/room.service';
@@ -99,6 +109,17 @@ describe('room management pages', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getRoomTypes.mockResolvedValue(roomTypes);
+    getRoomFloors.mockResolvedValue([
+      {
+        floor_number: 9,
+        room_count: 1,
+        total_capacity: 2,
+        current_occupancy: 1,
+        available_room_count: 1,
+        maintenance_room_count: 0,
+        inactive_room_count: 0,
+      },
+    ]);
     getRooms.mockResolvedValue({
       rooms: [room],
       pagination: { page: 1, totalPages: 1 },
@@ -136,12 +157,22 @@ describe('room management pages', () => {
     expect(screen.getAllByText('KSh 30,000').length).toBeGreaterThan(0);
   });
 
-  test('groups real room cards by floor and type', async () => {
+  test('shows floor summaries before opening the rooms on a floor', async () => {
+    const user = userEvent.setup();
     renderWithAuth(<AdminRoomListPage />, {
       route: '/admin/rooms?tab=rooms',
     });
 
-    expect(await screen.findByText('Floor 9')).toBeInTheDocument();
+    const floorButton = await screen.findByRole('button', {
+      name: 'View rooms on Floor 9',
+    });
+    expect(screen.queryByText('A901')).not.toBeInTheDocument();
+    expect(within(floorButton).getByText('1 room')).toBeInTheDocument();
+    expect(within(floorButton).getByText('1 of 2 beds')).toBeInTheDocument();
+
+    await user.click(floorButton);
+
+    expect(await screen.findByText('A901')).toBeInTheDocument();
     expect(
       screen.getByRole('heading', { name: 'Twin Room' })
     ).toBeInTheDocument();
@@ -163,6 +194,11 @@ describe('room management pages', () => {
       route: '/admin/rooms?tab=rooms',
     });
 
+    await user.click(
+      await screen.findByRole('button', {
+        name: 'View rooms on Floor 9',
+      })
+    );
     await screen.findByText('A901');
     await user.click(
       screen.getAllByRole('button', { name: 'Generate Rooms' }).at(-1)
@@ -184,6 +220,38 @@ describe('room management pages', () => {
     await waitFor(() =>
       expect(getRooms.mock.calls.length).toBeGreaterThanOrEqual(2)
     );
+  });
+
+  test('Admin confirms deletion of an unused room', async () => {
+    const user = userEvent.setup();
+    getRoomById.mockResolvedValue(room);
+    deleteRoom.mockResolvedValue({
+      id: room.id,
+      room_code: room.room_code,
+      floor_number: room.floor_number,
+    });
+
+    renderWithAuth(
+      <Routes>
+        <Route element={<AdminRoomDetailPage />} path="/admin/rooms/:roomId" />
+        <Route element={<div>Room floor overview</div>} path="/admin/rooms" />
+      </Routes>,
+      { route: `/admin/rooms/${room.id}` }
+    );
+
+    await user.click(
+      await screen.findByRole('button', { name: 'Delete Room' })
+    );
+    const deleteDialog = screen.getByRole('dialog', {
+      name: 'Delete this room?',
+    });
+    expect(deleteDialog).toBeInTheDocument();
+    await user.click(
+      within(deleteDialog).getByRole('button', { name: 'Delete Room' })
+    );
+
+    await waitFor(() => expect(deleteRoom).toHaveBeenCalledWith(room.id));
+    expect(await screen.findByText('Room floor overview')).toBeInTheDocument();
   });
 
   test('allocation options show type, rate, capacity, and occupancy', async () => {

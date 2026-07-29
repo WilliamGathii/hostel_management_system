@@ -1,11 +1,14 @@
 jest.mock('../../src/models/room.model', () => ({
   createRoom: jest.fn(),
   createRooms: jest.fn(),
+  deleteRoom: jest.fn(),
   findActiveAllocationByStudent: jest.fn(),
   findAllocationById: jest.fn(),
   findRoomConflicts: jest.fn(),
+  findRoomUsage: jest.fn(),
   findStudentById: jest.fn(),
   insertAllocation: jest.fn(),
+  listFloorSummaries: jest.fn(),
   lockRoomById: jest.fn(),
   withTransaction: jest.fn(),
 }));
@@ -116,6 +119,61 @@ describe('room service', () => {
       })
     ).rejects.toMatchObject({ statusCode: 409 });
     expect(roomModel.createRooms).not.toHaveBeenCalled();
+  });
+
+  test('lists floor summaries for Admin', async () => {
+    const summaries = [
+      {
+        floor_number: 9,
+        room_count: 6,
+        total_capacity: 12,
+        current_occupancy: 4,
+      },
+    ];
+    roomModel.listFloorSummaries.mockResolvedValue(summaries);
+
+    await expect(roomService.listFloors(admin)).resolves.toEqual(summaries);
+    expect(roomModel.listFloorSummaries).toHaveBeenCalledTimes(1);
+  });
+
+  test('does not list floor summaries for a Student', async () => {
+    await expect(
+      roomService.listFloors({ id: 'student-user', role: 'student' })
+    ).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  test('deletes a room with no allocation or maintenance history', async () => {
+    const unusedRoom = { id: 'room-id', room_code: 'A901' };
+    roomModel.lockRoomById.mockResolvedValue(unusedRoom);
+    roomModel.findRoomUsage.mockResolvedValue({
+      allocation_count: 0,
+      maintenance_count: 0,
+    });
+    roomModel.deleteRoom.mockResolvedValue(unusedRoom);
+
+    await expect(roomService.deleteRoom(admin, 'room-id')).resolves.toEqual(
+      unusedRoom
+    );
+    expect(roomModel.deleteRoom).toHaveBeenCalledWith('room-id', database);
+  });
+
+  test.each([
+    ['allocation', { allocation_count: 1, maintenance_count: 0 }],
+    ['maintenance', { allocation_count: 0, maintenance_count: 1 }],
+  ])('does not delete a room with %s history', async (_label, usage) => {
+    roomModel.lockRoomById.mockResolvedValue({
+      id: 'room-id',
+      room_code: 'A901',
+    });
+    roomModel.findRoomUsage.mockResolvedValue(usage);
+
+    await expect(
+      roomService.deleteRoom(admin, 'room-id')
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      message: expect.stringContaining('Mark it inactive instead'),
+    });
+    expect(roomModel.deleteRoom).not.toHaveBeenCalled();
   });
 
   test.each([

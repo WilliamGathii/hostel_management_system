@@ -22,6 +22,18 @@ const listRooms = async (req, res, next) => {
   }
 };
 
+const listFloors = async (req, res, next) => {
+  try {
+    const floors = await roomService.listFloors(req.user);
+    return sendSuccess(res, {
+      message: 'Room floors retrieved successfully',
+      data: { floors },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 const createRoomsBulk = async (req, res, next) => {
   try {
     const result = await roomService.createRoomsBulk(
@@ -92,6 +104,21 @@ const updateRoomStatus = async (req, res, next) => {
     return sendSuccess(res, {
       message: 'Room status updated successfully',
       data: { room },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const deleteRoom = async (req, res, next) => {
+  try {
+    const deletedRoom = await roomService.deleteRoom(
+      req.user,
+      req.validatedParams.roomId
+    );
+    return sendSuccess(res, {
+      message: 'Room deleted successfully',
+      data: { room: deletedRoom },
     });
   } catch (error) {
     return next(error);
@@ -179,11 +206,13 @@ const endAllocation = async (req, res, next) => {
 
 module.exports = {
   listRooms,
+  listFloors,
   getRoom,
   createRoom,
   createRoomsBulk,
   updateRoom,
   updateRoomStatus,
+  deleteRoom,
   getMyAllocation,
   listAllocations,
   createAllocation,

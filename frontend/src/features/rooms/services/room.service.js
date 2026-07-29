@@ -18,6 +18,11 @@ export const getRooms = async (params = {}) => {
   return data(response);
 };
 
+export const getRoomFloors = async () => {
+  const response = await apiClient.get('/rooms/floors');
+  return data(response).floors || [];
+};
+
 export const getRoomById = async (roomId) => {
   const response = await apiClient.get(`/rooms/${roomId}`);
   return data(response).room || null;
@@ -42,6 +47,11 @@ export const updateRoomStatus = async (roomId, status) => {
   const response = await apiClient.patch(`/rooms/${roomId}/status`, {
     status,
   });
+  return data(response).room || null;
+};
+
+export const deleteRoom = async (roomId) => {
+  const response = await apiClient.delete(`/rooms/${roomId}`);
   return data(response).room || null;
 };
 

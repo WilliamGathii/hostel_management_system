@@ -37,6 +37,7 @@ There is no separate Warden role. There is no separate Finance or Accounts role.
 | View rooms                        | Own records only | Allowed          | Not allowed           | Not allowed      |
 | Create rooms                      | Not allowed      | Allowed          | Not allowed           | Not allowed      |
 | Update rooms                      | Not allowed      | Allowed          | Not allowed           | Not allowed      |
+| Delete unused rooms               | Not allowed      | Allowed          | Not allowed           | Not allowed      |
 | Allocate rooms                    | Not allowed      | Allowed          | Not allowed           | Not allowed      |
 | View own allocation               | Own records only | Allowed          | Not allowed           | Not allowed      |
 | Submit maintenance request        | Allowed          | Allowed          | Not allowed           | Not allowed      |
@@ -75,12 +76,13 @@ There is no separate Warden role. There is no separate Finance or Accounts role.
 
 1. Admin users create and edit Student accounts and manage their status.
 2. Admin users can manage rooms, allocations, maintenance assignments, visitors, announcements, payments, reports, and audit logs.
-3. Admin users approve or reject visitors.
-4. Admin users control room allocation.
-5. Admin users manage simulated payment records.
-6. Admin users should not view password hashes or existing passwords.
-7. Admin users handle general hostel administrative duties in this version.
-8. Admin accounts are created through the safe initial setup process or future Admin user management, not public registration.
+3. Admin users may delete a room only when it has no allocation or maintenance history.
+4. Admin users approve or reject visitors.
+5. Admin users control room allocation.
+6. Admin users manage simulated payment records.
+7. Admin users should not view password hashes or existing passwords.
+8. Admin users handle general hostel administrative duties in this version.
+9. Admin accounts are created through the safe initial setup process or future Admin user management, not public registration.
 
 ## Maintenance Staff Rules
 

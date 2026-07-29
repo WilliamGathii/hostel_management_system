@@ -45,6 +45,11 @@ const listRooms = async (user, options) => {
   return { rooms, pagination: pagination(options, total) };
 };
 
+const listFloors = async (user) => {
+  requireRole(user, ADMIN_ROLE);
+  return roomModel.listFloorSummaries();
+};
+
 const getRoom = async (user, roomId) => {
   requireRole(user, ADMIN_ROLE);
   const room = await roomModel.findRoomById(roomId);
@@ -238,6 +243,40 @@ const updateRoomStatus = async (user, roomId, status) => {
   return roomModel.updateRoomStatus(roomId, status);
 };
 
+const deleteRoom = async (user, roomId) => {
+  requireRole(user, ADMIN_ROLE);
+
+  try {
+    return await roomModel.withTransaction(async (database) => {
+      const room = await roomModel.lockRoomById(roomId, database);
+
+      if (!room) {
+        throw new AppError('Room was not found', 404);
+      }
+
+      const usage = await roomModel.findRoomUsage(roomId, database);
+
+      if (usage.allocation_count > 0 || usage.maintenance_count > 0) {
+        throw new AppError(
+          'Room has allocation or maintenance history and cannot be deleted. Mark it inactive instead.',
+          409
+        );
+      }
+
+      return roomModel.deleteRoom(roomId, database);
+    });
+  } catch (error) {
+    if (error.code === '23503') {
+      throw new AppError(
+        'Room has related records and cannot be deleted. Mark it inactive instead.',
+        409
+      );
+    }
+
+    throw error;
+  }
+};
+
 const getMyAllocation = async (user) => {
   requireRole(user, STUDENT_ROLE);
   const allocation = await roomModel.findCurrentAllocationByUser(user.id);
@@ -415,10 +454,12 @@ module.exports = {
   createAllocation,
   createRoom,
   createRoomsBulk,
+  deleteRoom,
   endAllocation,
   getMyAllocation,
   getRoom,
   listAllocations,
+  listFloors,
   listRooms,
   updateAllocation,
   updateRoom,
