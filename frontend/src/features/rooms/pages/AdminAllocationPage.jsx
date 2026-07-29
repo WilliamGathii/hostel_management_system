@@ -25,6 +25,18 @@ import {
   updateAllocation,
 } from '../services/room.service';
 
+const formatCurrency = (amount) =>
+  `KSh ${Number(amount || 0).toLocaleString(undefined, {
+    maximumFractionDigits: 0,
+  })}`;
+
+const roomOptionLabel = (room) =>
+  `${room.room_code} - ${room.room_type_name} - Floor ${
+    room.floor_number
+  } - ${formatCurrency(room.monthly_rate)} - ${room.current_occupancy}/${
+    room.capacity
+  } occupied - ${formatLabel(room.occupancy_status)}`;
+
 function AllocationEditDialog({ allocation, onCancel, onSaved, rooms }) {
   const [submitError, setSubmitError] = useState('');
   const {
@@ -68,7 +80,7 @@ function AllocationEditDialog({ allocation, onCancel, onSaved, rooms }) {
         </h2>
         <p className="mt-1 text-sm text-muted">
           {allocation.student_name} is currently in room{' '}
-          {allocation.room_number}.
+          {allocation.room_code || allocation.room_number}.
         </p>
         {submitError ? (
           <Alert className="mt-5" variant="error">
@@ -85,7 +97,7 @@ function AllocationEditDialog({ allocation, onCancel, onSaved, rooms }) {
           >
             {rooms.map((room) => (
               <option key={room.id} value={room.id}>
-                {room.room_number} ({room.current_occupancy}/{room.capacity})
+                {roomOptionLabel(room)}
               </option>
             ))}
           </SelectField>
@@ -223,7 +235,8 @@ export function AdminAllocationPage() {
   );
   const selectableRooms = rooms.filter(
     (room) =>
-      !['full', 'under_maintenance', 'inactive'].includes(room.status) &&
+      room.operational_status === 'active' &&
+      room.occupancy_status !== 'full' &&
       room.current_occupancy < room.capacity
   );
   const allocatedStudentIds = new Set(
@@ -285,7 +298,7 @@ export function AdminAllocationPage() {
               <option value="">Select room</option>
               {selectableRooms.map((room) => (
                 <option key={room.id} value={room.id}>
-                  {room.room_number} ({room.current_occupancy}/{room.capacity})
+                  {roomOptionLabel(room)}
                 </option>
               ))}
             </SelectField>
@@ -388,8 +401,10 @@ export function AdminAllocationPage() {
                       </div>
                       <p className="mt-1 text-sm text-muted">
                         {allocation.student_number} · Room{' '}
-                        {allocation.room_number} · Started{' '}
-                        {formatDate(allocation.start_date)}
+                        {allocation.room_code || allocation.room_number} ·{' '}
+                        {allocation.room_type_name} ·{' '}
+                        {formatCurrency(allocation.monthly_rate_at_allocation)}{' '}
+                        · Started {formatDate(allocation.start_date)}
                       </p>
                     </div>
                     <div className="mt-4 flex flex-col gap-2 sm:mt-0 sm:flex-row">
@@ -426,9 +441,8 @@ export function AdminAllocationPage() {
           rooms={rooms.filter(
             (room) =>
               room.id === editingAllocation.room_id ||
-              (!['full', 'under_maintenance', 'inactive'].includes(
-                room.status
-              ) &&
+              (room.operational_status === 'active' &&
+                room.occupancy_status !== 'full' &&
                 room.current_occupancy < room.capacity)
           )}
         />
@@ -437,7 +451,7 @@ export function AdminAllocationPage() {
       {endingAllocation ? (
         <ConfirmDialog
           confirmLabel="End Allocation"
-          description={`End ${endingAllocation.student_name}'s allocation to room ${endingAllocation.room_number}? The room occupancy will be updated.`}
+          description={`End ${endingAllocation.student_name}'s allocation to room ${endingAllocation.room_code || endingAllocation.room_number}? Occupancy will update from the active allocation records.`}
           isLoading={isEnding}
           onCancel={() => setEndingAllocation(null)}
           onConfirm={confirmEnd}

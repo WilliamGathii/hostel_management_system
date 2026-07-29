@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { LuArrowLeft } from 'react-icons/lu';
-import { Link, useParams } from 'react-router-dom';
+import { LuArrowLeft, LuTrash2 } from 'react-icons/lu';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { Button } from '../../../components/common/Button';
 import { Card } from '../../../components/common/Card';
+import { ConfirmDialog } from '../../../components/common/ConfirmDialog';
 import { PageContainer } from '../../../components/common/PageContainer';
 import { PageHeader } from '../../../components/common/PageHeader';
 import { StatusChip } from '../../../components/common/StatusChip';
@@ -13,6 +14,7 @@ import { Skeleton } from '../../../components/feedback/Skeleton';
 import { formatLabel } from '../../../utils/formatters';
 import { RoomForm } from '../components/RoomForm';
 import {
+  deleteRoom,
   getRoomById,
   updateRoom,
   updateRoomStatus,
@@ -20,12 +22,16 @@ import {
 
 export function AdminRoomDetailPage() {
   const { roomId } = useParams();
+  const navigate = useNavigate();
   const [room, setRoom] = useState(null);
   const [status, setStatus] = useState('');
   const [notice, setNotice] = useState('');
   const [statusError, setStatusError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingStatus, setIsSavingStatus] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const [hasError, setHasError] = useState(false);
 
   const loadRoom = useCallback(async () => {
@@ -35,7 +41,7 @@ export function AdminRoomDetailPage() {
     try {
       const result = await getRoomById(roomId);
       setRoom(result);
-      setStatus(result?.status || '');
+      setStatus(result?.operational_status || '');
     } catch {
       setHasError(true);
     } finally {
@@ -69,6 +75,21 @@ export function AdminRoomDetailPage() {
     }
   };
 
+  const confirmDelete = async () => {
+    setIsDeleting(true);
+    setDeleteError('');
+
+    try {
+      await deleteRoom(roomId);
+      navigate('/admin/rooms?tab=rooms', { replace: true });
+    } catch (error) {
+      setDeleteError(error.message || 'Room could not be deleted.');
+      setIsDeleteOpen(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <PageContainer>
@@ -96,14 +117,14 @@ export function AdminRoomDetailPage() {
         actions={
           <Link
             className="inline-flex min-h-11 items-center gap-2 rounded-card bg-periwinkle-light px-4 text-sm font-semibold text-primary"
-            to="/admin/rooms"
+            to={`/admin/rooms?tab=rooms&floor=${room.floor_number}`}
           >
             <LuArrowLeft aria-hidden="true" className="size-4" />
             Back to rooms
           </Link>
         }
-        description={`${room.room_type} room with ${room.current_occupancy} of ${room.capacity} spaces occupied.`}
-        title={`Room ${room.room_number}`}
+        description={`${room.room_type_name} on Floor ${room.floor_number}, with ${room.current_occupancy} of ${room.capacity} spaces occupied.`}
+        title={`Room ${room.room_code}`}
       />
 
       {notice ? (
@@ -115,11 +136,37 @@ export function AdminRoomDetailPage() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <Card>
           <h2 className="text-lg font-bold text-text">Room information</h2>
+          <dl className="mt-5 grid gap-4 rounded-card bg-page p-4 sm:grid-cols-2">
+            <div>
+              <dt className="text-xs font-semibold text-muted">Room type</dt>
+              <dd className="mt-1 font-semibold text-text">
+                {room.room_type_name} ({room.room_type_code})
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold text-muted">Monthly rate</dt>
+              <dd className="mt-1 font-semibold text-text">
+                KSh {Number(room.monthly_rate).toLocaleString()}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold text-muted">Floor</dt>
+              <dd className="mt-1 font-semibold text-text">
+                {room.floor_number}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold text-muted">Occupancy</dt>
+              <dd className="mt-1 font-semibold text-text">
+                {room.current_occupancy} of {room.capacity}
+              </dd>
+            </div>
+          </dl>
           <div className="mt-6">
             <RoomForm
               initialValues={room}
+              mode="edit"
               onSubmit={saveDetails}
-              showRoomNumber={false}
               submitLabel="Save Changes"
             />
           </div>
@@ -127,7 +174,7 @@ export function AdminRoomDetailPage() {
         <Card className="self-start">
           <h2 className="text-lg font-bold text-text">Room status</h2>
           <div className="mt-3">
-            <StatusChip>{formatLabel(room.status)}</StatusChip>
+            <StatusChip>{formatLabel(room.occupancy_status)}</StatusChip>
           </div>
           <label
             className="mt-6 block text-sm font-semibold text-text"
@@ -141,9 +188,7 @@ export function AdminRoomDetailPage() {
             onChange={(event) => setStatus(event.target.value)}
             value={status}
           >
-            <option value="available">Available</option>
-            <option value="occupied">Occupied</option>
-            <option value="full">Full</option>
+            <option value="active">Active</option>
             <option value="under_maintenance">Under maintenance</option>
             <option value="inactive">Inactive</option>
           </select>
@@ -152,14 +197,49 @@ export function AdminRoomDetailPage() {
           ) : null}
           <Button
             className="mt-4 w-full"
-            disabled={status === room.status}
+            disabled={status === room.operational_status}
             isLoading={isSavingStatus}
             onClick={saveStatus}
           >
             Update Status
           </Button>
+          <div className="mt-7 border-t border-border pt-6">
+            <h2 className="text-base font-bold text-text">Delete room</h2>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              Permanently remove this room only if it has no allocation or
+              maintenance history.
+            </p>
+            {deleteError ? (
+              <Alert className="mt-4" variant="error">
+                {deleteError}
+              </Alert>
+            ) : null}
+            <Button
+              className="mt-4 w-full"
+              onClick={() => {
+                setDeleteError('');
+                setIsDeleteOpen(true);
+              }}
+              variant="danger"
+            >
+              <LuTrash2 aria-hidden="true" className="size-4" />
+              Delete Room
+            </Button>
+          </div>
         </Card>
       </div>
+
+      {isDeleteOpen ? (
+        <ConfirmDialog
+          confirmLabel="Delete Room"
+          description={`Permanently delete Room ${room.room_code}? This is allowed only when the room has no allocation or maintenance history.`}
+          isLoading={isDeleting}
+          onCancel={() => setIsDeleteOpen(false)}
+          onConfirm={confirmDelete}
+          title="Delete this room?"
+          variant="danger"
+        />
+      ) : null}
     </PageContainer>
   );
 }

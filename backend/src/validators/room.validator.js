@@ -5,9 +5,10 @@ const {
   validateAllowedFields,
 } = require('./common.validator');
 
-const ROOM_STATUSES = [
+const ROOM_OPERATIONAL_STATUSES = ['active', 'under_maintenance', 'inactive'];
+const ROOM_OCCUPANCY_STATUSES = [
   'available',
-  'occupied',
+  'partially_occupied',
   'full',
   'under_maintenance',
   'inactive',
@@ -45,23 +46,34 @@ const paginationValidation = [
 const roomListValidation = [
   ...paginationValidation,
   query('search').optional().isString().trim().isLength({ max: 100 }),
-  query('status').optional().isIn(ROOM_STATUSES),
+  query('floor').optional().isInt({ min: 1 }).toInt(),
+  query('room_type_id').optional().isUUID(),
+  query('room_type_code')
+    .optional()
+    .isString()
+    .trim()
+    .toUpperCase()
+    .matches(/^[A-Z]$/),
+  query('operational_status').optional().isIn(ROOM_OPERATIONAL_STATUSES),
+  query('occupancy_status').optional().isIn(ROOM_OCCUPANCY_STATUSES),
 ];
 
 const roomCreateValidation = [
   body().custom(
     validateAllowedFields(
-      new Set(['room_number', 'room_type', 'capacity', 'floor', 'description']),
+      new Set(['room_type_id', 'floor_number', 'room_number', 'description']),
       'Room details are required'
     )
   ),
-  text('room_number', 'Room number', { maximum: 50 }),
-  text('room_type', 'Room type', { maximum: 80 }),
-  body('capacity')
-    .isInt({ min: 1, max: 100 })
-    .withMessage('Capacity must be between 1 and 100')
+  body('room_type_id').isUUID().withMessage('Room type identifier is invalid'),
+  body('floor_number')
+    .isInt({ min: 1 })
+    .withMessage('Floor number must be greater than zero')
     .toInt(),
-  text('floor', 'Floor', { maximum: 50, optional: true }),
+  body('room_number')
+    .isInt({ min: 1, max: 99 })
+    .withMessage('Room number must be between 1 and 99')
+    .toInt(),
   text('description', 'Description', {
     maximum: 1000,
     optional: true,
@@ -71,17 +83,15 @@ const roomCreateValidation = [
 const roomUpdateValidation = [
   body().custom(
     validateAllowedFields(
-      new Set(['room_type', 'capacity', 'floor', 'description']),
+      new Set(['capacity', 'description']),
       'Provide at least one room field to update'
     )
   ),
-  text('room_type', 'Room type', { maximum: 80, optional: true }),
   body('capacity')
     .optional()
     .isInt({ min: 1, max: 100 })
     .withMessage('Capacity must be between 1 and 100')
     .toInt(),
-  text('floor', 'Floor', { maximum: 50, optional: true }),
   text('description', 'Description', {
     maximum: 1000,
     optional: true,
@@ -93,8 +103,46 @@ const roomStatusValidation = [
     validateAllowedFields(new Set(['status']), 'Room status is required')
   ),
   body('status')
-    .isIn(ROOM_STATUSES)
-    .withMessage('Room status is not supported'),
+    .isIn(ROOM_OPERATIONAL_STATUSES)
+    .withMessage('Room operational status is not supported'),
+];
+
+const roomBulkCreateValidation = [
+  body().custom(
+    validateAllowedFields(
+      new Set([
+        'room_type_id',
+        'floor_number',
+        'starting_room_number',
+        'quantity',
+      ]),
+      'Bulk room details are required'
+    )
+  ),
+  body('room_type_id').isUUID().withMessage('Room type identifier is invalid'),
+  body('floor_number')
+    .isInt({ min: 1 })
+    .withMessage('Floor number must be greater than zero')
+    .toInt(),
+  body('starting_room_number')
+    .isInt({ min: 1, max: 99 })
+    .withMessage('Starting room number must be between 1 and 99')
+    .toInt(),
+  body('quantity')
+    .isInt({ min: 1, max: 99 })
+    .withMessage('Quantity must be between 1 and 99')
+    .toInt()
+    .custom((quantity, { req }) => {
+      const startingRoomNumber = Number(req.body.starting_room_number);
+
+      if (
+        Number.isInteger(startingRoomNumber) &&
+        startingRoomNumber + quantity - 1 > 99
+      ) {
+        throw new Error('Final room number must not exceed 99');
+      }
+      return true;
+    }),
 ];
 
 const allocationListValidation = [
@@ -173,6 +221,7 @@ module.exports = {
   allocationIdentifierValidation,
   roomListValidation,
   roomCreateValidation,
+  roomBulkCreateValidation,
   roomUpdateValidation,
   roomStatusValidation,
   allocationListValidation,

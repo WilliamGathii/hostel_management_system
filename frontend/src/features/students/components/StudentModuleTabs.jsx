@@ -103,7 +103,8 @@ export function StudentAllocationTab({
                 Current allocation
               </p>
               <h2 className="mt-1 text-xl font-bold text-text">
-                Room {currentAllocation.room_number}
+                Room{' '}
+                {currentAllocation.room_code || currentAllocation.room_number}
               </h2>
             </div>
             <StatusChip
@@ -116,23 +117,38 @@ export function StudentAllocationTab({
             <div>
               <dt className="text-xs font-semibold text-muted">Floor</dt>
               <dd className="mt-1 text-sm font-semibold text-text">
-                {currentAllocation.floor || 'Not specified'}
+                {currentAllocation.floor_number ||
+                  currentAllocation.floor ||
+                  'Not specified'}
               </dd>
             </div>
             <div>
               <dt className="text-xs font-semibold text-muted">Room status</dt>
               <dd className="mt-1">
                 <StatusChip
-                  variant={statusVariant[currentAllocation.room_status]}
+                  variant={statusVariant[currentAllocation.occupancy_status]}
                 >
-                  {formatLabel(currentAllocation.room_status)}
+                  {formatLabel(currentAllocation.occupancy_status)}
                 </StatusChip>
               </dd>
             </div>
             <div>
               <dt className="text-xs font-semibold text-muted">Room type</dt>
               <dd className="mt-1 text-sm font-semibold text-text">
-                {currentAllocation.room_type || 'Not specified'}
+                {currentAllocation.room_type_name ||
+                  currentAllocation.room_type ||
+                  'Not specified'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold text-muted">
+                Monthly rate at allocation
+              </dt>
+              <dd className="mt-1 text-sm font-semibold text-text">
+                KSh{' '}
+                {Number(
+                  currentAllocation.monthly_rate_at_allocation || 0
+                ).toLocaleString()}
               </dd>
             </div>
             <div>
@@ -188,7 +204,7 @@ export function StudentAllocationTab({
                 {history.map((allocation) => (
                   <tr key={allocation.id}>
                     <td className="px-4 py-4 font-semibold text-text">
-                      {allocation.room_number}
+                      {allocation.room_code || allocation.room_number}
                     </td>
                     <td className="px-4 py-4 text-text">
                       {formatDate(allocation.start_date)}
@@ -216,7 +232,7 @@ export function StudentAllocationTab({
               <article className="rounded-card bg-page p-4" key={allocation.id}>
                 <div className="flex items-start justify-between gap-3">
                   <p className="font-bold text-text">
-                    Room {allocation.room_number}
+                    Room {allocation.room_code || allocation.room_number}
                   </p>
                   <StatusChip
                     variant={statusVariant[allocation.allocation_status]}

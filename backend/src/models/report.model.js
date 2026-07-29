@@ -3,11 +3,17 @@ const AppError = require('../utils/app-error');
 
 const ROOM_STATUSES = new Set([
   'available',
-  'occupied',
+  'partially_occupied',
   'full',
   'under_maintenance',
   'inactive',
 ]);
+const ACTIVE_ROOM_OCCUPANCY = `(
+  SELECT COUNT(*)::integer
+  FROM room_allocations active_ra
+  WHERE active_ra.room_id = r.id
+    AND active_ra.allocation_status = 'active'
+)`;
 const ALLOCATION_STATUSES = new Set([
   'pending',
   'active',
@@ -46,8 +52,22 @@ const getAdminDashboard = async (database = getDatabase()) => {
        (SELECT COUNT(*)::integer FROM users WHERE role = 'student') AS students,
        (SELECT COUNT(*)::integer FROM users WHERE role = 'student' AND account_status = 'active') AS active_students,
        (SELECT COUNT(*)::integer FROM rooms) AS rooms,
-       (SELECT COUNT(*)::integer FROM rooms WHERE status = 'available') AS available_rooms,
-       (SELECT COUNT(*)::integer FROM rooms WHERE status IN ('occupied', 'full') OR current_occupancy > 0) AS occupied_rooms,
+       (
+         SELECT COUNT(*)::integer
+         FROM rooms r
+         WHERE r.operational_status = 'active'
+           AND NOT EXISTS (
+             SELECT 1 FROM room_allocations ra
+             WHERE ra.room_id = r.id AND ra.allocation_status = 'active'
+           )
+       ) AS available_rooms,
+       (
+         SELECT COUNT(DISTINCT r.id)::integer
+         FROM rooms r
+         INNER JOIN room_allocations ra
+           ON ra.room_id = r.id AND ra.allocation_status = 'active'
+         WHERE r.operational_status <> 'inactive'
+       ) AS occupied_rooms,
        (SELECT COUNT(*)::integer FROM room_allocations WHERE allocation_status = 'active') AS active_allocations,
        (SELECT COUNT(*)::integer FROM maintenance_requests WHERE status IN ('submitted', 'assigned', 'in_progress')) AS open_maintenance,
        (SELECT COUNT(*)::integer FROM maintenance_requests WHERE status = 'submitted') AS pending_maintenance,
@@ -59,8 +79,17 @@ const getAdminDashboard = async (database = getDatabase()) => {
          FROM visitor_verifications
          WHERE verification_status = 'checked_in' AND exit_time IS NULL
        ) AS visitors_inside,
-       (SELECT COALESCE(SUM(capacity), 0)::integer FROM rooms WHERE status <> 'inactive') AS total_capacity,
-       (SELECT COALESCE(SUM(current_occupancy), 0)::integer FROM rooms WHERE status <> 'inactive') AS current_occupancy`
+       (
+         SELECT COALESCE(SUM(capacity), 0)::integer
+         FROM rooms WHERE operational_status <> 'inactive'
+       ) AS total_capacity,
+       (
+         SELECT COUNT(*)::integer
+         FROM room_allocations ra
+         INNER JOIN rooms r ON r.id = ra.room_id
+         WHERE ra.allocation_status = 'active'
+           AND r.operational_status <> 'inactive'
+       ) AS current_occupancy`
   );
   const stats = result.rows[0];
   stats.available_beds = Math.max(
@@ -176,12 +205,14 @@ const buildRoomFilters = (options) => {
   const conditions = [];
   addFilter(values, conditions, options.roomId, (index) => `r.id = $${index}`);
   if (ROOM_STATUSES.has(options.status)) {
-    addFilter(
-      values,
-      conditions,
-      options.status,
-      (index) => `r.status = $${index}`
-    );
+    const roomStatusConditions = {
+      available: `${ACTIVE_ROOM_OCCUPANCY} = 0 AND r.operational_status = 'active'`,
+      partially_occupied: `${ACTIVE_ROOM_OCCUPANCY} > 0 AND ${ACTIVE_ROOM_OCCUPANCY} < r.capacity AND r.operational_status = 'active'`,
+      full: `${ACTIVE_ROOM_OCCUPANCY} >= r.capacity AND r.operational_status = 'active'`,
+      under_maintenance: "r.operational_status = 'under_maintenance'",
+      inactive: "r.operational_status = 'inactive'",
+    };
+    conditions.push(roomStatusConditions[options.status]);
   }
   return { values, conditions };
 };
@@ -231,26 +262,45 @@ const getRoomReport = async (options, database = getDatabase()) => {
     `SELECT
        COUNT(*)::integer AS total_rooms,
        COALESCE(SUM(r.capacity), 0)::integer AS total_capacity,
-       COALESCE(SUM(r.current_occupancy), 0)::integer AS current_occupancy,
-       COALESCE(SUM(r.capacity - r.current_occupancy), 0)::integer AS available_beds
+       COALESCE(SUM(${ACTIVE_ROOM_OCCUPANCY}), 0)::integer AS current_occupancy,
+       COALESCE(SUM(r.capacity - ${ACTIVE_ROOM_OCCUPANCY}), 0)::integer AS available_beds
      FROM rooms r
      ${roomWhere}`,
     roomFilters.values
   );
   const statusResult = await database.query(
-    `SELECT r.status, COUNT(*)::integer AS total
+    `SELECT
+       CASE
+         WHEN r.operational_status = 'under_maintenance' THEN 'under_maintenance'
+         WHEN r.operational_status = 'inactive' THEN 'inactive'
+         WHEN ${ACTIVE_ROOM_OCCUPANCY} = 0 THEN 'available'
+         WHEN ${ACTIVE_ROOM_OCCUPANCY} >= r.capacity THEN 'full'
+         ELSE 'partially_occupied'
+       END AS status,
+       COUNT(*)::integer AS total
      FROM rooms r
      ${roomWhere}
-     GROUP BY r.status
-     ORDER BY r.status`,
+     GROUP BY status
+     ORDER BY status`,
     roomFilters.values
   );
   const roomsResult = await database.query(
-    `SELECT r.id, r.room_number, r.room_type, r.floor, r.capacity,
-            r.current_occupancy, r.status
+    `SELECT r.id, r.room_code AS room_number, r.room_code,
+            rt.name AS room_type, rt.code AS room_type_code,
+            r.floor_number::text AS floor, r.floor_number, r.capacity,
+            rt.monthly_rate, ${ACTIVE_ROOM_OCCUPANCY} AS current_occupancy,
+            r.operational_status,
+            CASE
+              WHEN r.operational_status = 'under_maintenance' THEN 'under_maintenance'
+              WHEN r.operational_status = 'inactive' THEN 'inactive'
+              WHEN ${ACTIVE_ROOM_OCCUPANCY} = 0 THEN 'available'
+              WHEN ${ACTIVE_ROOM_OCCUPANCY} >= r.capacity THEN 'full'
+              ELSE 'partially_occupied'
+            END AS status
      FROM rooms r
+     INNER JOIN room_types rt ON rt.id = r.room_type_id
      ${roomWhere}
-     ORDER BY r.room_number
+     ORDER BY r.floor_number, rt.code, r.room_number
      LIMIT 100`,
     roomFilters.values
   );
@@ -266,7 +316,7 @@ const getRoomReport = async (options, database = getDatabase()) => {
   );
   const allocationsResult = await database.query(
     `SELECT ra.id, ra.start_date, ra.expected_end_date, ra.actual_end_date,
-            ra.allocation_status, r.room_number, sp.student_number,
+            ra.allocation_status, r.room_code AS room_number, sp.student_number,
             u.full_name AS student_name
      FROM room_allocations ra
      INNER JOIN rooms r ON r.id = ra.room_id
@@ -309,12 +359,12 @@ const getAllocationReport = async (options, database = getDatabase()) => {
     filters.values
   );
   const roomBreakdownResult = await database.query(
-    `SELECT r.room_number, COUNT(*)::integer AS total
+    `SELECT r.room_code AS room_number, COUNT(*)::integer AS total
      FROM room_allocations ra
      INNER JOIN rooms r ON r.id = ra.room_id
      ${reportWhere}
-     GROUP BY r.room_number
-     ORDER BY r.room_number`,
+     GROUP BY r.room_code
+     ORDER BY r.room_code`,
     filters.values
   );
   const periodResult = await database.query(
@@ -347,7 +397,7 @@ const getAllocationReport = async (options, database = getDatabase()) => {
   );
   const recordsResult = await database.query(
     `SELECT ra.id, ra.start_date, ra.expected_end_date, ra.actual_end_date,
-            ra.allocation_status, r.room_number, sp.student_number,
+            ra.allocation_status, r.room_code AS room_number, sp.student_number,
             u.full_name AS student_name
      FROM room_allocations ra
      INNER JOIN rooms r ON r.id = ra.room_id
@@ -420,7 +470,7 @@ const getStudentReport = async (options, database = getDatabase()) => {
   const recordsResult = await database.query(
     `SELECT sp.id, sp.student_number, sp.course, sp.year_of_study,
             u.full_name, u.email, u.account_status,
-            r.room_number, ra.allocation_status
+            r.room_code AS room_number, ra.allocation_status
      FROM student_profiles sp
      INNER JOIN users u ON u.id = sp.user_id
      LEFT JOIN room_allocations ra
@@ -541,7 +591,7 @@ const getMaintenanceReport = async (options, database = getDatabase()) => {
   );
   const recordsResult = await database.query(
     `SELECT mr.id, mr.title, mr.priority, mr.status, mr.submitted_at,
-            mr.completed_at, r.room_number, sp.student_number,
+            mr.completed_at, r.room_code AS room_number, sp.student_number,
             student_user.full_name AS student_name,
             staff_user.full_name AS assigned_staff_name
      FROM maintenance_requests mr
@@ -682,7 +732,7 @@ const getPaymentReport = async (options, database = getDatabase()) => {
   const recordsResult = await database.query(
     `SELECT p.id, p.amount, p.payment_method, p.transaction_reference,
             p.payment_date, p.payment_status, sp.student_number,
-            u.full_name AS student_name, r.room_number
+            u.full_name AS student_name, r.room_code AS room_number
      FROM payments p
      INNER JOIN student_profiles sp ON sp.id = p.student_id
      INNER JOIN users u ON u.id = sp.user_id

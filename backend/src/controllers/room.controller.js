@@ -7,10 +7,42 @@ const listRooms = async (req, res, next) => {
       page: req.validatedQuery.page || 1,
       limit: req.validatedQuery.limit || 20,
       search: req.validatedQuery.search || '',
-      status: req.validatedQuery.status || '',
+      floor: req.validatedQuery.floor || '',
+      roomTypeId: req.validatedQuery.room_type_id || '',
+      roomTypeCode: req.validatedQuery.room_type_code || '',
+      operationalStatus: req.validatedQuery.operational_status || '',
+      occupancyStatus: req.validatedQuery.occupancy_status || '',
     });
     return sendSuccess(res, {
       message: 'Rooms retrieved successfully',
+      data: result,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const listFloors = async (req, res, next) => {
+  try {
+    const floors = await roomService.listFloors(req.user);
+    return sendSuccess(res, {
+      message: 'Room floors retrieved successfully',
+      data: { floors },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const createRoomsBulk = async (req, res, next) => {
+  try {
+    const result = await roomService.createRoomsBulk(
+      req.user,
+      req.validatedBody
+    );
+    return sendSuccess(res, {
+      statusCode: 201,
+      message: 'Rooms generated successfully',
       data: result,
     });
   } catch (error) {
@@ -72,6 +104,21 @@ const updateRoomStatus = async (req, res, next) => {
     return sendSuccess(res, {
       message: 'Room status updated successfully',
       data: { room },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const deleteRoom = async (req, res, next) => {
+  try {
+    const deletedRoom = await roomService.deleteRoom(
+      req.user,
+      req.validatedParams.roomId
+    );
+    return sendSuccess(res, {
+      message: 'Room deleted successfully',
+      data: { room: deletedRoom },
     });
   } catch (error) {
     return next(error);
@@ -159,10 +206,13 @@ const endAllocation = async (req, res, next) => {
 
 module.exports = {
   listRooms,
+  listFloors,
   getRoom,
   createRoom,
+  createRoomsBulk,
   updateRoom,
   updateRoomStatus,
+  deleteRoom,
   getMyAllocation,
   listAllocations,
   createAllocation,

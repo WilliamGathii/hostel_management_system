@@ -453,7 +453,10 @@ export function AdminStudentDetailPage() {
                   </SummaryItem>
                   <SummaryItem Icon={LuBedDouble} label="Current room">
                     {currentAllocation
-                      ? `Room ${currentAllocation.room_number}`
+                      ? `Room ${
+                          currentAllocation.room_code ||
+                          currentAllocation.room_number
+                        }`
                       : '-'}
                   </SummaryItem>
                   <SummaryItem

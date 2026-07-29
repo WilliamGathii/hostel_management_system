@@ -18,7 +18,8 @@ const REQUEST_COLUMNS = `
   student_user.id AS student_user_id,
   student_user.full_name AS student_name,
   student_user.email AS student_email,
-  r.room_number,
+  r.room_code AS room_number,
+  r.room_code,
   staff.full_name AS assigned_staff_name
 `;
 
@@ -153,7 +154,7 @@ const buildFilters = ({
       [
         `(mr.title ILIKE $${index}`,
         `student_user.full_name ILIKE $${index}`,
-        `r.room_number ILIKE $${index})`,
+        `r.room_code ILIKE $${index})`,
       ].join(' OR ')
     );
   }

@@ -1,6 +1,7 @@
 # Database Design
 
-This document describes the planned PostgreSQL database for the Smart Hostel Management System. It is for design only. No SQL files, migrations, tables, or seed data are created in this step.
+This document describes the approved PostgreSQL database for the Smart Hostel
+Management System. Database migrations must follow these rules.
 
 ## Database Naming Style
 
@@ -18,17 +19,18 @@ The planned tables are:
 1. `users`
 2. `student_profiles`
 3. `staff_profiles`
-4. `rooms`
-5. `room_allocations`
-6. `maintenance_requests`
-7. `maintenance_updates`
-8. `visitors`
-9. `visitor_verifications`
-10. `announcements`
-11. `announcement_recipients`
-12. `notifications`
-13. `payments`
-14. `audit_logs`
+4. `room_types`
+5. `rooms`
+6. `room_allocations`
+7. `maintenance_requests`
+8. `maintenance_updates`
+9. `visitors`
+10. `visitor_verifications`
+11. `announcements`
+12. `announcement_recipients`
+13. `notifications`
+14. `payments`
+15. `audit_logs`
 
 ## Table Designs
 
@@ -191,9 +193,9 @@ Timestamps:
 - `created_at`
 - `updated_at`
 
-### `rooms`
+### `room_types`
 
-Purpose: Stores room information and occupancy details.
+Purpose: Stores reusable room categories, monthly rates, and default capacities.
 
 Primary key:
 
@@ -201,37 +203,76 @@ Primary key:
 
 Important fields:
 
-- `room_number`
-- `room_type`
-- `capacity`
-- `current_occupancy`
+- `code`
+- `name`
+- `monthly_rate`
+- `default_capacity`
+- `description`
 - `status`
-- `floor`
+
+Required and unique fields:
+
+- `code` is one unique uppercase letter.
+- `name` is unique.
+- `monthly_rate` and `default_capacity` must be greater than zero.
+
+Suggested status values:
+
+- `active`
+- `inactive`
+
+Relationships:
+
+- One room type may define many rooms.
+- Existing rooms keep their saved capacity when the default changes.
+- Existing allocations keep their saved monthly rate when the rate changes.
+
+Timestamps:
+
+- `created_at`
+- `updated_at`
+
+### `rooms`
+
+Purpose: Stores structured rooms organised by room type and floor.
+
+Primary key:
+
+- `id`
+
+Important fields:
+
+- `room_type_id`
+- `floor_number`
+- `room_number`
+- `room_code`
+- `capacity`
+- `operational_status`
 - `description`
 - `created_at`
 - `updated_at`
 
 Foreign keys:
 
-- None.
+- `room_type_id` references `room_types.id`
 
 Required fields:
 
+- `room_type_id`
+- `floor_number`
 - `room_number`
-- `room_type`
+- `room_code`
 - `capacity`
-- `current_occupancy`
-- `status`
+- `operational_status`
 
 Unique fields:
 
-- `room_number`
+- `room_code`
+- The combination of `room_type_id`, `floor_number`, and `room_number`
 
 Suggested status values:
 
-- `available`
-- `occupied`
-- `full`
+- `active`
 - `under_maintenance`
 - `inactive`
 
@@ -239,6 +280,7 @@ Relationships:
 
 - One room may have many room allocations over time.
 - One room may have many maintenance requests.
+- Current occupancy is calculated from active room allocations.
 
 Timestamps:
 
@@ -262,6 +304,7 @@ Important fields:
 - `expected_end_date`
 - `actual_end_date`
 - `allocation_status`
+- `monthly_rate_at_allocation`
 - `notes`
 - `created_at`
 - `updated_at`
@@ -279,6 +322,7 @@ Required fields:
 - `allocated_by`
 - `start_date`
 - `allocation_status`
+- `monthly_rate_at_allocation`
 
 Unique fields:
 
@@ -296,6 +340,7 @@ Relationships:
 - One student may have many room allocations over time.
 - One room may have many room allocations over time.
 - One Admin user may create many room allocations.
+- The rate snapshot does not change when a room type's rate changes later.
 
 Timestamps:
 
@@ -795,13 +840,16 @@ Timestamps:
 2. One student number must be unique.
 3. One staff number must be unique.
 4. A student should not have more than one active room allocation.
-5. Room occupancy must not exceed room capacity.
-6. Only Admin users can create, change, or end room allocations.
-7. Maintenance requests must belong to a valid student and room.
-8. Only assigned Maintenance Staff or Admin users should update maintenance request progress.
-9. Only Admin users can approve or reject visitors.
-10. Only approved visitors can be verified by Security Staff.
-11. Security Staff cannot approve or reject visitors.
-12. Payment records do not represent real money transfers.
-13. Important Admin and staff actions should create audit logs.
-14. Password hashes should be stored, but plain passwords must never be stored.
+5. Room occupancy, calculated from active allocations, must not exceed room capacity.
+6. Room codes and room type, floor, and room number combinations must be unique.
+7. Rooms under maintenance or inactive cannot receive new allocations.
+8. A room may be deleted only when it has no allocation or maintenance history.
+9. Only Admin users can create, change, or end room allocations.
+10. Maintenance requests must belong to a valid student and room.
+11. Only assigned Maintenance Staff or Admin users should update maintenance request progress.
+12. Only Admin users can approve or reject visitors.
+13. Only approved visitors can be verified by Security Staff.
+14. Security Staff cannot approve or reject visitors.
+15. Payment records do not represent real money transfers.
+16. Important Admin and staff actions should create audit logs.
+17. Password hashes should be stored, but plain passwords must never be stored.

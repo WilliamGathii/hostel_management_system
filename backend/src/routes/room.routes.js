@@ -7,6 +7,7 @@ const {
   roomIdentifierValidation,
   roomListValidation,
   roomCreateValidation,
+  roomBulkCreateValidation,
   roomUpdateValidation,
   roomStatusValidation,
   handleRoomValidation,
@@ -20,6 +21,13 @@ router.get(
   roomListValidation,
   handleRoomValidation,
   roomController.listRooms
+);
+router.get('/floors', roomController.listFloors);
+router.post(
+  '/bulk',
+  roomBulkCreateValidation,
+  handleRoomValidation,
+  roomController.createRoomsBulk
 );
 router.post(
   '/',
@@ -46,6 +54,12 @@ router.patch(
   roomStatusValidation,
   handleRoomValidation,
   roomController.updateRoomStatus
+);
+router.delete(
+  '/:roomId',
+  roomIdentifierValidation,
+  handleRoomValidation,
+  roomController.deleteRoom
 );
 
 module.exports = router;

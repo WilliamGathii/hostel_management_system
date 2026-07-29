@@ -2,10 +2,13 @@ const request = require('supertest');
 
 jest.mock('../../src/services/room.service', () => ({
   listRooms: jest.fn(),
+  listFloors: jest.fn(),
   getRoom: jest.fn(),
   createRoom: jest.fn(),
+  createRoomsBulk: jest.fn(),
   updateRoom: jest.fn(),
   updateRoomStatus: jest.fn(),
+  deleteRoom: jest.fn(),
   getMyAllocation: jest.fn(),
   listAllocations: jest.fn(),
   createAllocation: jest.fn(),
@@ -23,6 +26,7 @@ const roomService = require('../../src/services/room.service');
 const { signAuthToken } = require('../../src/utils/jwt');
 
 const roomId = '11111111-1111-4111-8111-111111111111';
+const roomTypeId = '44444444-4444-4444-8444-444444444444';
 const studentId = '22222222-2222-4222-8222-222222222222';
 const allocationId = '33333333-3333-4333-8333-333333333333';
 const users = {
@@ -44,11 +48,15 @@ const users = {
 };
 const room = {
   id: roomId,
-  room_number: 'A101',
-  room_type: 'Shared',
+  room_type_id: roomTypeId,
+  floor_number: 1,
+  room_number: 1,
+  room_code: 'A101',
+  room_type_name: 'Twin Room',
   capacity: 2,
   current_occupancy: 0,
-  status: 'available',
+  operational_status: 'active',
+  occupancy_status: 'available',
 };
 const allocation = {
   id: allocationId,
@@ -69,12 +77,40 @@ describe('room and allocation routes', () => {
       rooms: [room],
       pagination: { page: 1, limit: 20, total: 1, totalPages: 1 },
     });
+    roomService.listFloors.mockResolvedValue([
+      {
+        floor_number: 1,
+        room_count: 1,
+        total_capacity: 2,
+        current_occupancy: 0,
+        available_room_count: 1,
+        maintenance_room_count: 0,
+        inactive_room_count: 0,
+      },
+    ]);
     roomService.getRoom.mockResolvedValue(room);
     roomService.createRoom.mockResolvedValue(room);
+    roomService.createRoomsBulk.mockResolvedValue({
+      created_count: 6,
+      floor_number: 9,
+      room_type: {
+        id: roomTypeId,
+        code: 'A',
+        name: 'Twin Room',
+      },
+      first_room_code: 'A901',
+      last_room_code: 'A906',
+      room_codes: ['A901', 'A902', 'A903', 'A904', 'A905', 'A906'],
+    });
     roomService.updateRoom.mockResolvedValue(room);
     roomService.updateRoomStatus.mockResolvedValue({
       ...room,
       status: 'inactive',
+    });
+    roomService.deleteRoom.mockResolvedValue({
+      id: roomId,
+      room_code: 'A101',
+      floor_number: 1,
     });
     roomService.getMyAllocation.mockResolvedValue(allocation);
     roomService.listAllocations.mockResolvedValue({
@@ -109,37 +145,115 @@ describe('room and allocation routes', () => {
     }
   );
 
+  test('Admin can list floor summaries', async () => {
+    const response = await request(app)
+      .get('/api/v1/rooms/floors')
+      .set('Authorization', authorization(users.admin));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.floors).toEqual([
+      expect.objectContaining({ floor_number: 1, room_count: 1 }),
+    ]);
+    expect(roomService.listFloors).toHaveBeenCalledWith(
+      expect.objectContaining({ role: 'admin' })
+    );
+  });
+
+  test('Student cannot list floor summaries', async () => {
+    const response = await request(app)
+      .get('/api/v1/rooms/floors')
+      .set('Authorization', authorization(users.student));
+
+    expect(response.status).toBe(403);
+  });
+
   test('Admin can create a room', async () => {
     const response = await request(app)
       .post('/api/v1/rooms')
       .set('Authorization', authorization(users.admin))
       .send({
-        room_number: 'A101',
-        room_type: 'Shared',
-        capacity: 2,
-        floor: 'First',
+        room_type_id: roomTypeId,
+        floor_number: 1,
+        room_number: 1,
         description: 'Near the study area',
       });
 
     expect(response.status).toBe(201);
     expect(roomService.createRoom).toHaveBeenCalledWith(
       expect.objectContaining({ role: 'admin' }),
-      expect.objectContaining({ room_number: 'A101', capacity: 2 })
+      expect.objectContaining({
+        room_type_id: roomTypeId,
+        floor_number: 1,
+        room_number: 1,
+      })
     );
   });
 
-  test('room creation rejects invalid capacity', async () => {
+  test('room creation rejects an invalid room number', async () => {
     const response = await request(app)
       .post('/api/v1/rooms')
       .set('Authorization', authorization(users.admin))
       .send({
-        room_number: 'A101',
-        room_type: 'Shared',
-        capacity: 0,
+        room_type_id: roomTypeId,
+        floor_number: 1,
+        room_number: 0,
       });
 
     expect(response.status).toBe(422);
     expect(roomService.createRoom).not.toHaveBeenCalled();
+  });
+
+  test('Admin can generate a complete room batch', async () => {
+    const response = await request(app)
+      .post('/api/v1/rooms/bulk')
+      .set('Authorization', authorization(users.admin))
+      .send({
+        room_type_id: roomTypeId,
+        floor_number: 9,
+        starting_room_number: 1,
+        quantity: 6,
+      });
+
+    expect(response.status).toBe(201);
+    expect(response.body.data).toMatchObject({
+      created_count: 6,
+      first_room_code: 'A901',
+      last_room_code: 'A906',
+    });
+    expect(roomService.createRoomsBulk).toHaveBeenCalledWith(
+      expect.objectContaining({ role: 'admin' }),
+      expect.objectContaining({ floor_number: 9, quantity: 6 })
+    );
+  });
+
+  test.each([
+    [{ floor_number: 0, starting_room_number: 1, quantity: 1 }],
+    [{ floor_number: 9, starting_room_number: 0, quantity: 1 }],
+    [{ floor_number: 9, starting_room_number: 1, quantity: 0 }],
+    [{ floor_number: 9, starting_room_number: 98, quantity: 3 }],
+  ])('bulk generation rejects invalid values', async (values) => {
+    const response = await request(app)
+      .post('/api/v1/rooms/bulk')
+      .set('Authorization', authorization(users.admin))
+      .send({ room_type_id: roomTypeId, ...values });
+
+    expect(response.status).toBe(422);
+    expect(roomService.createRoomsBulk).not.toHaveBeenCalled();
+  });
+
+  test('only Admin can generate rooms', async () => {
+    const response = await request(app)
+      .post('/api/v1/rooms/bulk')
+      .set('Authorization', authorization(users.student))
+      .send({
+        room_type_id: roomTypeId,
+        floor_number: 9,
+        starting_room_number: 1,
+        quantity: 6,
+      });
+
+    expect(response.status).toBe(403);
+    expect(roomService.createRoomsBulk).not.toHaveBeenCalled();
   });
 
   test('Admin can update room status', async () => {
@@ -153,6 +267,22 @@ describe('room and allocation routes', () => {
       expect.objectContaining({ role: 'admin' }),
       roomId,
       'inactive'
+    );
+  });
+
+  test('Admin can delete an unused room', async () => {
+    const response = await request(app)
+      .delete(`/api/v1/rooms/${roomId}`)
+      .set('Authorization', authorization(users.admin));
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.room).toMatchObject({
+      id: roomId,
+      room_code: 'A101',
+    });
+    expect(roomService.deleteRoom).toHaveBeenCalledWith(
+      expect.objectContaining({ role: 'admin' }),
+      roomId
     );
   });
 

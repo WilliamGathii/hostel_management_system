@@ -5,13 +5,20 @@ notification modules.
 
 ## Room Management
 
-Admin users can create rooms, update room details and status, search rooms, and
-view occupancy. Room numbers are unique. Capacity must be positive and cannot
-be lower than current occupancy.
+Admin users manage approved room types, organise rooms by floor, generate rooms
+in a single batch, and update room details and operational status. Room codes
+are generated from the room-type code, floor, and two-digit room number.
+Occupancy is calculated from active allocations.
+
+The room overview lists floors before room details. Admin users may delete an
+unused room created by mistake. Rooms with allocation or maintenance history
+must be marked inactive instead so their records remain complete.
 
 Admin users control all allocations. A Student can have only one active
-allocation, and a room cannot be allocated beyond its capacity. Allocation
-changes use database transactions so that occupancy remains correct.
+allocation, and a room cannot be allocated beyond its capacity. A room under
+maintenance or inactive cannot receive a new allocation. The room type's
+monthly rate is copied into the allocation so later rate changes do not change
+history.
 
 Students can view only their current allocation and safe room details. Students
 cannot select or book rooms.
@@ -19,6 +26,7 @@ cannot select or book rooms.
 Main API groups:
 
 - `/api/v1/rooms`
+- `/api/v1/room-types`
 - `/api/v1/allocations`
 
 ## Maintenance Management
