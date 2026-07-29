@@ -66,9 +66,11 @@ export function StudentRoomPage() {
             <div>
               <p className="text-sm font-semibold text-information">My stay</p>
               <h2 className="mt-1 text-2xl font-bold text-text">
-                Room {allocation.room_number}
+                Room {allocation.room_code || allocation.room_number}
               </h2>
-              <p className="mt-1 text-muted">{allocation.room_type}</p>
+              <p className="mt-1 text-muted">
+                {allocation.room_type_name || allocation.room_type}
+              </p>
             </div>
             <StatusChip variant="success">
               {formatLabel(allocation.allocation_status)}
@@ -78,7 +80,7 @@ export function StudentRoomPage() {
             <div>
               <dt className="text-xs font-semibold text-muted">Floor</dt>
               <dd className="mt-1 font-semibold text-text">
-                {allocation.floor || 'Not specified'}
+                {allocation.floor_number || allocation.floor || 'Not specified'}
               </dd>
             </div>
             <div>
@@ -87,6 +89,17 @@ export function StudentRoomPage() {
               </dt>
               <dd className="mt-1 font-semibold text-text">
                 {allocation.capacity}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold text-muted">
+                Monthly rate at allocation
+              </dt>
+              <dd className="mt-1 font-semibold text-text">
+                KSh{' '}
+                {Number(
+                  allocation.monthly_rate_at_allocation || 0
+                ).toLocaleString()}
               </dd>
             </div>
             <div>
