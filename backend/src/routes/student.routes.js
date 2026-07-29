@@ -71,5 +71,13 @@ router.patch(
   handleStudentValidation,
   studentController.updateStudentStatus
 );
+router.delete(
+  '/:studentId',
+  authenticate,
+  authorizeRoles('admin'),
+  studentIdentifierValidation,
+  handleStudentValidation,
+  studentController.deleteStudent
+);
 
 module.exports = router;

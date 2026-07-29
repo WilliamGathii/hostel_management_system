@@ -6,17 +6,20 @@ import {
   LuGraduationCap,
   LuPencil,
   LuShieldCheck,
+  LuTrash2,
   LuWrench,
 } from 'react-icons/lu';
 import {
   Link,
   useLocation,
+  useNavigate,
   useParams,
   useSearchParams,
 } from 'react-router-dom';
 
 import { Button } from '../../../components/common/Button';
 import { Card } from '../../../components/common/Card';
+import { ConfirmDialog } from '../../../components/common/ConfirmDialog';
 import { PageContainer } from '../../../components/common/PageContainer';
 import { PageHeader } from '../../../components/common/PageHeader';
 import { StatusChip } from '../../../components/common/StatusChip';
@@ -35,6 +38,7 @@ import {
   StudentVisitorsTab,
 } from '../components/StudentModuleTabs';
 import {
+  deleteStudent,
   getStudentById,
   updateStudent,
   updateStudentStatus,
@@ -152,6 +156,7 @@ function SummaryItem({ Icon, label, children }) {
 export function AdminStudentDetailPage() {
   const { studentId } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedTab = searchParams.get('tab') || 'overview';
   const activeTab = tabs.some((tab) => tab.value === requestedTab)
@@ -165,10 +170,13 @@ export function AdminStudentDetailPage() {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isEditingStudent, setIsEditingStudent] = useState(false);
+  const [isDeleteConfirming, setIsDeleteConfirming] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [successMessage, setSuccessMessage] = useState(
     location.state?.notice || ''
   );
   const [statusError, setStatusError] = useState('');
+  const [deleteError, setDeleteError] = useState('');
 
   const loadStudent = useCallback(async () => {
     setIsLoading(true);
@@ -324,6 +332,35 @@ export function AdminStudentDetailPage() {
     setIsEditingStudent(true);
   };
 
+  const requestDelete = () => {
+    setDeleteError('');
+    setSuccessMessage('');
+    setIsDeleteConfirming(true);
+  };
+
+  const confirmDelete = async () => {
+    setIsDeleting(true);
+    setDeleteError('');
+
+    try {
+      await deleteStudent(student.id);
+      navigate('/admin/students', {
+        replace: true,
+        state: {
+          notice: 'Student account deleted successfully.',
+        },
+      });
+    } catch (error) {
+      setDeleteError(
+        error.message ||
+          'The student account could not be deleted. Set it to inactive instead.'
+      );
+      setIsDeleteConfirming(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <PageContainer>
@@ -369,10 +406,16 @@ export function AdminStudentDetailPage() {
       <PageHeader
         actions={
           !isEditingStudent ? (
-            <Button onClick={openEditor}>
-              <LuPencil aria-hidden="true" className="size-4" />
-              Edit Student
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={openEditor}>
+                <LuPencil aria-hidden="true" className="size-4" />
+                Edit Student
+              </Button>
+              <Button onClick={requestDelete} variant="danger">
+                <LuTrash2 aria-hidden="true" className="size-4" />
+                Delete Student
+              </Button>
+            </div>
           ) : null
         }
         description="Review the student profile and linked hostel records."
@@ -383,6 +426,7 @@ export function AdminStudentDetailPage() {
         {successMessage ? (
           <Alert variant="success">{successMessage}</Alert>
         ) : null}
+        {deleteError ? <Alert variant="error">{deleteError}</Alert> : null}
 
         <Card className="py-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -659,6 +703,16 @@ export function AdminStudentDetailPage() {
           ) : null}
         </Card>
       </div>
+      {isDeleteConfirming ? (
+        <ConfirmDialog
+          confirmLabel="Delete Student"
+          description={`This permanently removes ${student.full_name}'s account. Accounts with room, maintenance, visitor, or payment history cannot be deleted.`}
+          isLoading={isDeleting}
+          onCancel={() => setIsDeleteConfirming(false)}
+          onConfirm={confirmDelete}
+          title="Delete this student account?"
+        />
+      ) : null}
     </PageContainer>
   );
 }

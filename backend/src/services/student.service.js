@@ -317,6 +317,59 @@ const updateStudentAccountStatus = async (user, studentId, accountStatus) => {
   return toSafeStudent(updatedStudent);
 };
 
+const deleteStudentAccount = async (user, studentId) => {
+  requireRole(user, ADMIN_ROLE);
+
+  try {
+    return await studentModel.withTransaction(async (database) => {
+      const student = await studentModel.lockStudentById(studentId, database);
+
+      if (!student) {
+        throw new AppError('Student was not found', 404);
+      }
+
+      const usage = await studentModel.findStudentUsage(studentId, database);
+      const hasLinkedRecords = [
+        usage.allocation_count,
+        usage.maintenance_count,
+        usage.visitor_count,
+        usage.payment_count,
+      ].some((count) => Number(count) > 0);
+
+      if (hasLinkedRecords) {
+        throw new AppError(
+          'Student has linked hostel records and cannot be deleted. Set the account to inactive instead.',
+          409
+        );
+      }
+
+      const deletedAccount = await studentModel.deleteStudentAccount(
+        student.user_id,
+        database
+      );
+
+      if (!deletedAccount) {
+        throw new AppError('Student was not found', 404);
+      }
+
+      return {
+        id: student.id,
+        full_name: student.full_name,
+        student_number: student.student_number,
+      };
+    });
+  } catch (error) {
+    if (error.code === '23503') {
+      throw new AppError(
+        'Student has related records and cannot be deleted. Set the account to inactive instead.',
+        409
+      );
+    }
+
+    throw error;
+  }
+};
+
 module.exports = {
   ALLOWED_ACCOUNT_STATUSES,
   EDITABLE_PROFILE_FIELDS,
@@ -325,6 +378,7 @@ module.exports = {
   listStudents,
   getStudentById,
   createStudent,
+  deleteStudentAccount,
   updateStudent,
   updateStudentAccountStatus,
 };

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 vi.mock('../services/api-client', () => ({
   default: {
+    delete: vi.fn(),
     get: vi.fn(),
     patch: vi.fn(),
     post: vi.fn(),
@@ -10,6 +11,7 @@ vi.mock('../services/api-client', () => ({
 
 import {
   getMyStudentProfile,
+  deleteStudent,
   getStudentById,
   getStudents,
   createStudent,
@@ -22,6 +24,7 @@ import apiClient from '../services/api-client';
 describe('frontend student service', () => {
   beforeEach(() => {
     apiClient.get.mockReset();
+    apiClient.delete.mockReset();
     apiClient.patch.mockReset();
     apiClient.post.mockReset();
   });
@@ -115,5 +118,16 @@ describe('frontend student service', () => {
       `/students/${student.id}`,
       updateData
     );
+  });
+
+  test('deletes a Student through the Admin endpoint', async () => {
+    const student = {
+      id: '19b9714f-d3b7-4f73-97a1-1cc52471e167',
+      full_name: 'Amina Student',
+    };
+    apiClient.delete.mockResolvedValue({ data: { student } });
+
+    await expect(deleteStudent(student.id)).resolves.toEqual(student);
+    expect(apiClient.delete).toHaveBeenCalledWith(`/students/${student.id}`);
   });
 });

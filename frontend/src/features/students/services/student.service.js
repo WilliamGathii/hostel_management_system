@@ -35,6 +35,11 @@ export const createStudent = async (studentData) => {
   return getResponseData(response).student || null;
 };
 
+export const deleteStudent = async (studentId) => {
+  const response = await apiClient.delete(`/students/${studentId}`);
+  return getResponseData(response).student || null;
+};
+
 export const updateStudent = async (studentId, studentData) => {
   const response = await apiClient.patch(`/students/${studentId}`, studentData);
   return getResponseData(response).student || null;

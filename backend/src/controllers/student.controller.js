@@ -116,7 +116,24 @@ const updateStudentStatus = async (req, res, next) => {
   }
 };
 
+const deleteStudent = async (req, res, next) => {
+  try {
+    const deletedStudent = await studentService.deleteStudentAccount(
+      req.user,
+      req.validatedParams.studentId
+    );
+
+    return sendSuccess(res, {
+      message: 'Student account deleted successfully',
+      data: { student: deletedStudent },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
+  deleteStudent,
   getMyProfile,
   updateMyProfile,
   listStudents,

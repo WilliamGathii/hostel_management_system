@@ -29,6 +29,22 @@ const getDatabase = () => {
   return pool;
 };
 
+const withTransaction = async (operation, database = getDatabase()) => {
+  const client = await database.connect();
+
+  try {
+    await client.query('BEGIN');
+    const result = await operation(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 const findStudentByUserId = async (userId, database = getDatabase()) => {
   const result = await database.query(
     `SELECT ${SAFE_STUDENT_COLUMNS}
@@ -50,6 +66,60 @@ const findStudentById = async (studentId, database = getDatabase()) => {
      WHERE sp.id = $1
        AND u.role = 'student'`,
     [studentId]
+  );
+
+  return result.rows[0] || null;
+};
+
+const lockStudentById = async (studentId, database = getDatabase()) => {
+  const result = await database.query(
+    `SELECT ${SAFE_STUDENT_COLUMNS}
+     FROM student_profiles sp
+     INNER JOIN users u ON u.id = sp.user_id
+     WHERE sp.id = $1
+       AND u.role = 'student'
+     FOR UPDATE OF sp, u`,
+    [studentId]
+  );
+
+  return result.rows[0] || null;
+};
+
+const findStudentUsage = async (studentId, database = getDatabase()) => {
+  const result = await database.query(
+    `SELECT
+       (SELECT COUNT(*)::integer
+        FROM room_allocations
+        WHERE student_id = $1) AS allocation_count,
+       (SELECT COUNT(*)::integer
+        FROM maintenance_requests
+        WHERE student_id = $1) AS maintenance_count,
+       (SELECT COUNT(*)::integer
+        FROM visitors
+        WHERE student_id = $1) AS visitor_count,
+       (SELECT COUNT(*)::integer
+        FROM payments
+        WHERE student_id = $1) AS payment_count`,
+    [studentId]
+  );
+
+  return (
+    result.rows[0] || {
+      allocation_count: 0,
+      maintenance_count: 0,
+      visitor_count: 0,
+      payment_count: 0,
+    }
+  );
+};
+
+const deleteStudentAccount = async (userId, database = getDatabase()) => {
+  const result = await database.query(
+    `DELETE FROM users
+     WHERE id = $1
+       AND role = 'student'
+     RETURNING id`,
+    [userId]
   );
 
   return result.rows[0] || null;
@@ -286,12 +356,16 @@ const studentExistsById = async (studentId, database = getDatabase()) => {
 };
 
 module.exports = {
+  deleteStudentAccount,
   findStudentByUserId,
   findStudentById,
+  findStudentUsage,
+  lockStudentById,
   listStudents,
   countStudents,
   updateStudentProfile,
   updateStudentAccount,
   updateStudentAccountStatus,
   studentExistsById,
+  withTransaction,
 };

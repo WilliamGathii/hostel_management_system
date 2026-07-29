@@ -1,12 +1,16 @@
 jest.mock('../../src/models/student.model', () => ({
+  deleteStudentAccount: jest.fn(),
   findStudentByUserId: jest.fn(),
   findStudentById: jest.fn(),
+  findStudentUsage: jest.fn(),
+  lockStudentById: jest.fn(),
   listStudents: jest.fn(),
   countStudents: jest.fn(),
   updateStudentProfile: jest.fn(),
   updateStudentAccount: jest.fn(),
   updateStudentAccountStatus: jest.fn(),
   studentExistsById: jest.fn(),
+  withTransaction: jest.fn(),
 }));
 
 jest.mock('../../src/models/user.model', () => ({
@@ -56,6 +60,18 @@ describe('student service', () => {
     userModel.emailExists.mockResolvedValue(false);
     userModel.studentNumberExists.mockResolvedValue(false);
     hashPassword.mockResolvedValue('hashed-password');
+    studentModel.withTransaction.mockImplementation((operation) =>
+      operation({ query: jest.fn() })
+    );
+    studentModel.findStudentUsage.mockResolvedValue({
+      allocation_count: 0,
+      maintenance_count: 0,
+      visitor_count: 0,
+      payment_count: 0,
+    });
+    studentModel.deleteStudentAccount.mockResolvedValue({
+      id: studentUser.id,
+    });
   });
 
   test('returns the authenticated Student profile safely', async () => {
@@ -358,5 +374,62 @@ describe('student service', () => {
     ).rejects.toMatchObject({
       statusCode: 403,
     });
+  });
+
+  test('allows an Admin to delete a Student without linked records', async () => {
+    studentModel.lockStudentById.mockResolvedValue(sampleStudent);
+
+    const result = await studentService.deleteStudentAccount(
+      adminUser,
+      sampleStudent.id
+    );
+
+    expect(studentModel.findStudentUsage).toHaveBeenCalledWith(
+      sampleStudent.id,
+      expect.any(Object)
+    );
+    expect(studentModel.deleteStudentAccount).toHaveBeenCalledWith(
+      sampleStudent.user_id,
+      expect.any(Object)
+    );
+    expect(result).toEqual({
+      id: sampleStudent.id,
+      full_name: sampleStudent.full_name,
+      student_number: sampleStudent.student_number,
+    });
+  });
+
+  test('prevents deleting a Student with linked hostel records', async () => {
+    studentModel.lockStudentById.mockResolvedValue(sampleStudent);
+    studentModel.findStudentUsage.mockResolvedValue({
+      allocation_count: 1,
+      maintenance_count: 0,
+      visitor_count: 0,
+      payment_count: 0,
+    });
+
+    await expect(
+      studentService.deleteStudentAccount(adminUser, sampleStudent.id)
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      message:
+        'Student has linked hostel records and cannot be deleted. Set the account to inactive instead.',
+    });
+    expect(studentModel.deleteStudentAccount).not.toHaveBeenCalled();
+  });
+
+  test('returns 404 when the deletion target is missing', async () => {
+    studentModel.lockStudentById.mockResolvedValue(null);
+
+    await expect(
+      studentService.deleteStudentAccount(adminUser, sampleStudent.id)
+    ).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  test('rejects non-Admin Student deletion', async () => {
+    await expect(
+      studentService.deleteStudentAccount(studentUser, sampleStudent.id)
+    ).rejects.toMatchObject({ statusCode: 403 });
+    expect(studentModel.withTransaction).not.toHaveBeenCalled();
   });
 });
