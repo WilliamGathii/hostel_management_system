@@ -156,9 +156,8 @@ npm test
 ```
 
 The four dashboards provide role-aware account information, quick actions,
-workflow guidance, and safe unavailable states. Detailed module pages remain
-placeholders. Dashboard statistics will be connected later when the related
-backend modules provide real data.
+workflow guidance, and real database summaries. Unavailable records use clear
+empty states instead of sample data.
 
 ## Backend Setup
 
@@ -266,6 +265,10 @@ accounts cannot use public registration.
 
 Room, allocation, maintenance, visitor, announcement, notification, simulated
 payment, and report features are available. Audit-log screens remain planned.
+
+Payment records are simulated and do not transfer real money. Admin reports use
+real database summaries for Students, rooms, allocations, maintenance,
+visitors, and simulated payments. Report export is not included.
 
 ## Student Management
 
