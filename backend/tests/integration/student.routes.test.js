@@ -6,6 +6,7 @@ jest.mock('../../src/services/student.service', () => ({
   listStudents: jest.fn(),
   getStudentById: jest.fn(),
   createStudent: jest.fn(),
+  deleteStudentAccount: jest.fn(),
   updateStudent: jest.fn(),
   updateStudentAccountStatus: jest.fn(),
 }));
@@ -88,6 +89,11 @@ describe('student routes', () => {
     });
     studentService.getStudentById.mockResolvedValue(safeStudent);
     studentService.createStudent.mockResolvedValue(safeStudent);
+    studentService.deleteStudentAccount.mockResolvedValue({
+      id: safeStudent.id,
+      full_name: safeStudent.full_name,
+      student_number: safeStudent.student_number,
+    });
     studentService.updateStudent.mockResolvedValue(safeStudent);
     studentService.updateStudentAccountStatus.mockImplementation(
       async (_user, _studentId, accountStatus) => ({
@@ -423,5 +429,44 @@ describe('student routes', () => {
       .send({ account_status: 'suspended' });
 
     expect(response.status).toBe(404);
+  });
+
+  test('DELETE /api/v1/students/:studentId deletes a Student for an Admin', async () => {
+    const response = await request(app)
+      .delete(`/api/v1/students/${studentId}`)
+      .set('Authorization', authorization(users.admin));
+
+    expect(response.status).toBe(200);
+    expect(studentService.deleteStudentAccount).toHaveBeenCalledWith(
+      expect.objectContaining({ role: 'admin' }),
+      studentId
+    );
+    expect(response.body.message).toBe('Student account deleted successfully');
+    expect(response.body.data.student).toEqual({
+      id: safeStudent.id,
+      full_name: safeStudent.full_name,
+      student_number: safeStudent.student_number,
+    });
+  });
+
+  test.each(['student', 'maintenance_staff', 'security_staff'])(
+    'DELETE /api/v1/students/:studentId rejects the %s role',
+    async (role) => {
+      const response = await request(app)
+        .delete(`/api/v1/students/${studentId}`)
+        .set('Authorization', authorization(users[role]));
+
+      expect(response.status).toBe(403);
+      expect(studentService.deleteStudentAccount).not.toHaveBeenCalled();
+    }
+  );
+
+  test('DELETE /api/v1/students/:studentId validates the identifier', async () => {
+    const response = await request(app)
+      .delete('/api/v1/students/not-a-uuid')
+      .set('Authorization', authorization(users.admin));
+
+    expect(response.status).toBe(422);
+    expect(studentService.deleteStudentAccount).not.toHaveBeenCalled();
   });
 });

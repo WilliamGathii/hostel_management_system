@@ -49,7 +49,6 @@ The Admin Student list is available at `/admin/students`.
 
 It shows safe account information, account status, registration date, and a
 link to each Student detail page. It also provides an Add Student action.
-Student deletion is not available.
 
 Admins create Student accounts with a name, email, Student number, temporary
 password, and optional profile fields. New accounts always use the Student role
@@ -111,35 +110,40 @@ Payments tab shows the Student's simulated payment history and summary.
 Admins can edit approved identity, contact, and profile fields. Role, account
 status, password information, IDs, and timestamps remain protected.
 
+Admins can permanently delete an account that was created by mistake when it
+has no room allocation, maintenance, visitor, or payment history. Deletion
+requires confirmation. An account with linked hostel records must be set to
+inactive instead so its history remains available.
+
 ## 10. Account-Status Management
 
 Admins can activate, suspend, or deactivate a Student account.
 
 A status change requires confirmation. The frontend does not send a request
-when the selected status is unchanged. Student records are not permanently
-deleted in this version.
+when the selected status is unchanged.
 
 ## 11. Role Permissions
 
 Students can view and update only their own approved profile fields.
 
-Admins can create, list, view, and edit Student records. They can also update
-Student account status.
+Admins can create, list, view, edit, and delete unused Student records. They can
+also update Student account status.
 
 Maintenance Staff and Security Staff cannot use Student-management endpoints
 or pages.
 
 ## 12. API Endpoints
 
-| Method  | Endpoint                             | Role    | Purpose                        |
-| ------- | ------------------------------------ | ------- | ------------------------------ |
-| `GET`   | `/api/v1/students/me`                | Student | View own profile               |
-| `PATCH` | `/api/v1/students/me`                | Student | Update approved profile fields |
-| `GET`   | `/api/v1/students`                   | Admin   | Search and list students       |
-| `POST`  | `/api/v1/students`                   | Admin   | Create a Student account       |
-| `GET`   | `/api/v1/students/:studentId`        | Admin   | View one Student record        |
-| `PATCH` | `/api/v1/students/:studentId`        | Admin   | Edit approved Student fields   |
-| `PATCH` | `/api/v1/students/:studentId/status` | Admin   | Update account status          |
+| Method   | Endpoint                             | Role    | Purpose                        |
+| -------- | ------------------------------------ | ------- | ------------------------------ |
+| `GET`    | `/api/v1/students/me`                | Student | View own profile               |
+| `PATCH`  | `/api/v1/students/me`                | Student | Update approved profile fields |
+| `GET`    | `/api/v1/students`                   | Admin   | Search and list students       |
+| `POST`   | `/api/v1/students`                   | Admin   | Create a Student account       |
+| `GET`    | `/api/v1/students/:studentId`        | Admin   | View one Student record        |
+| `PATCH`  | `/api/v1/students/:studentId`        | Admin   | Edit approved Student fields   |
+| `PATCH`  | `/api/v1/students/:studentId/status` | Admin   | Update account status          |
+| `DELETE` | `/api/v1/students/:studentId`        | Admin   | Delete an unused Student       |
 
 ## 13. Validation
 
@@ -195,10 +199,12 @@ Backend and frontend tests cover:
 - Desktop tables and mobile record cards
 - Student and payment cross-navigation
 - Protected fields and role-protected routes
+- Admin-only deletion and confirmation
+- Safe rejection when linked hostel records exist
 
 ## 18. Current Limitations
 
 - Student full name and email are read-only.
-- Student records cannot be permanently deleted.
+- Student records with linked hostel history cannot be permanently deleted.
 - Profile-image upload is not included.
 - Password reset is not included.

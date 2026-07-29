@@ -5,6 +5,7 @@ import { Route, Routes } from 'react-router-dom';
 
 vi.mock('../features/students/services/student.service', () => ({
   createStudent: vi.fn(),
+  deleteStudent: vi.fn(),
   getStudentById: vi.fn(),
   getStudents: vi.fn(),
   updateStudent: vi.fn(),
@@ -29,6 +30,7 @@ import { AdminStudentDetailPage } from '../features/students/pages/AdminStudentD
 import { AdminStudentListPage } from '../features/students/pages/AdminStudentListPage';
 import {
   createStudent,
+  deleteStudent,
   getStudentById,
   getStudents,
   updateStudent,
@@ -75,6 +77,10 @@ const renderDetail = (tab = '') =>
         element={<AdminStudentDetailPage />}
         path="/admin/students/:studentId"
       />
+      <Route
+        element={<div>Student list destination</div>}
+        path="/admin/students"
+      />
     </Routes>,
     {
       route: `/admin/students/${student.id}${tab ? `?tab=${tab}` : ''}`,
@@ -100,6 +106,7 @@ describe('Admin Student list page', () => {
     getStudents.mockReset();
     getStudentById.mockReset();
     createStudent.mockReset();
+    deleteStudent.mockReset();
     updateStudent.mockReset();
     updateStudentStatus.mockReset();
   });
@@ -213,6 +220,7 @@ describe('Admin Student detail page', () => {
     getStudents.mockReset();
     getStudentById.mockReset();
     createStudent.mockReset();
+    deleteStudent.mockReset();
     updateStudent.mockReset();
     updateStudentStatus.mockReset();
     getAllocations.mockReset();
@@ -261,10 +269,68 @@ describe('Admin Student detail page', () => {
     expect(screen.queryByText('must-never-appear')).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/role/i)).not.toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: /delete/i })
-    ).not.toBeInTheDocument();
+      screen.getByRole('button', { name: 'Delete Student' })
+    ).toBeInTheDocument();
     expect(screen.getByText('Account information')).toBeInTheDocument();
     expect(screen.getAllByText('Account status').length).toBeGreaterThan(0);
+  });
+
+  test('requires confirmation before deleting a Student account', async () => {
+    const user = userEvent.setup();
+    getStudentById.mockResolvedValue(student);
+    deleteStudent.mockResolvedValue({
+      id: student.id,
+      full_name: student.full_name,
+      student_number: student.student_number,
+    });
+
+    renderDetail();
+    await user.click(
+      await screen.findByRole('button', { name: 'Delete Student' })
+    );
+
+    expect(
+      screen.getByRole('heading', { name: 'Delete this student account?' })
+    ).toBeInTheDocument();
+    expect(deleteStudent).not.toHaveBeenCalled();
+
+    const deleteButtons = screen.getAllByRole('button', {
+      name: 'Delete Student',
+    });
+    await user.click(deleteButtons.at(-1));
+
+    await waitFor(() => expect(deleteStudent).toHaveBeenCalledWith(student.id));
+    expect(
+      await screen.findByText('Student list destination')
+    ).toBeInTheDocument();
+  });
+
+  test('shows a safe message when linked records prevent deletion', async () => {
+    const user = userEvent.setup();
+    getStudentById.mockResolvedValue(student);
+    deleteStudent.mockRejectedValue({
+      message:
+        'Student has linked hostel records and cannot be deleted. Set the account to inactive instead.',
+      statusCode: 409,
+    });
+
+    renderDetail();
+    await user.click(
+      await screen.findByRole('button', { name: 'Delete Student' })
+    );
+    const deleteButtons = screen.getAllByRole('button', {
+      name: 'Delete Student',
+    });
+    await user.click(deleteButtons.at(-1));
+
+    expect(
+      await screen.findByText(
+        'Student has linked hostel records and cannot be deleted. Set the account to inactive instead.'
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Student list destination')
+    ).not.toBeInTheDocument();
   });
 
   test('requires confirmation and updates an approved status', async () => {
@@ -483,6 +549,7 @@ describe('Admin Student detail page', () => {
 describe('Admin Student creation page', () => {
   beforeEach(() => {
     createStudent.mockReset();
+    deleteStudent.mockReset();
     getStudentById.mockReset();
     getStudents.mockReset();
     updateStudent.mockReset();

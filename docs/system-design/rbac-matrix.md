@@ -34,6 +34,7 @@ There is no separate Warden role. There is no separate Finance or Accounts role.
 | Update own profile                | Own records only | Own records only | Own records only      | Own records only |
 | View all students                 | Not allowed      | Allowed          | Not allowed           | Not allowed      |
 | Change student status             | Not allowed      | Allowed          | Not allowed           | Not allowed      |
+| Delete unused Student accounts    | Not allowed      | Allowed          | Not allowed           | Not allowed      |
 | View rooms                        | Own records only | Allowed          | Not allowed           | Not allowed      |
 | Create rooms                      | Not allowed      | Allowed          | Not allowed           | Not allowed      |
 | Update rooms                      | Not allowed      | Allowed          | Not allowed           | Not allowed      |

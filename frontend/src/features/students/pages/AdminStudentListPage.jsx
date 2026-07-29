@@ -6,13 +6,14 @@ import {
   LuSearch,
   LuUserRound,
 } from 'react-icons/lu';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 import { Button } from '../../../components/common/Button';
 import { Card } from '../../../components/common/Card';
 import { PageContainer } from '../../../components/common/PageContainer';
 import { PageHeader } from '../../../components/common/PageHeader';
 import { StatusChip } from '../../../components/common/StatusChip';
+import { Alert } from '../../../components/feedback/Alert';
 import { EmptyState } from '../../../components/feedback/EmptyState';
 import { ErrorState } from '../../../components/feedback/ErrorState';
 import { Skeleton } from '../../../components/feedback/Skeleton';
@@ -95,6 +96,7 @@ function StudentMobileCard({ student }) {
 }
 
 export function AdminStudentListPage() {
+  const location = useLocation();
   const [students, setStudents] = useState([]);
   const [pagination, setPagination] = useState(initialPagination);
   const [page, setPage] = useState(1);
@@ -165,6 +167,12 @@ export function AdminStudentListPage() {
         description="Find student accounts and review their account status."
         title="Student Management"
       />
+
+      {location.state?.notice ? (
+        <div className="mb-5">
+          <Alert variant="success">{location.state.notice}</Alert>
+        </div>
+      ) : null}
 
       <Card>
         <form
@@ -263,16 +271,28 @@ export function AdminStudentListPage() {
                 <table className="w-full table-fixed border-collapse text-left text-sm">
                   <thead className="bg-page text-xs text-muted">
                     <tr>
-                      <th className="w-[32%] px-5 py-3 font-semibold" scope="col">
+                      <th
+                        className="w-[32%] px-5 py-3 font-semibold"
+                        scope="col"
+                      >
                         Student
                       </th>
-                      <th className="w-[19%] px-5 py-3 font-semibold" scope="col">
+                      <th
+                        className="w-[19%] px-5 py-3 font-semibold"
+                        scope="col"
+                      >
                         Student number
                       </th>
-                      <th className="w-[16%] px-5 py-3 font-semibold" scope="col">
+                      <th
+                        className="w-[16%] px-5 py-3 font-semibold"
+                        scope="col"
+                      >
                         Status
                       </th>
-                      <th className="w-[18%] px-5 py-3 font-semibold" scope="col">
+                      <th
+                        className="w-[18%] px-5 py-3 font-semibold"
+                        scope="col"
+                      >
                         Registered
                       </th>
                       <th
