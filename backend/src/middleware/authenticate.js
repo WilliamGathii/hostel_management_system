@@ -1,20 +1,7 @@
 const userModel = require('../models/user.model');
 const AppError = require('../utils/app-error');
+const { getBearerToken } = require('../utils/bearer-token');
 const { verifyAuthToken } = require('../utils/jwt');
-
-const getBearerToken = (authorizationHeader) => {
-  if (typeof authorizationHeader !== 'string') {
-    return null;
-  }
-
-  const [scheme, token, extraValue] = authorizationHeader.trim().split(/\s+/);
-
-  if (scheme !== 'Bearer' || !token || extraValue) {
-    return null;
-  }
-
-  return token;
-};
 
 const authenticate = async (req, _res, next) => {
   const token = getBearerToken(req.get('authorization'));
@@ -53,6 +40,18 @@ const authenticate = async (req, _res, next) => {
 
     if (user.account_status !== 'active') {
       next(new AppError('Account is not active', 403));
+      return;
+    }
+
+    if (user.must_change_password) {
+      next(new AppError('Password change is required', 401));
+      return;
+    }
+
+    if (
+      Number(payload.credentialVersion ?? 0) !== Number(user.token_version ?? 0)
+    ) {
+      next(new AppError('Authentication token is invalid', 401));
       return;
     }
 

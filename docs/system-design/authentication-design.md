@@ -63,10 +63,12 @@ Plain passwords and password hashes are never returned by the API.
 
 ## JWT Authentication
 
-JWT access tokens use the HS256 algorithm. A token contains only:
+JWT access tokens use the HS256 algorithm. A normal token contains:
 
 - `sub`: the user ID.
 - `role`: the role at login time.
+- `purpose`: `access`.
+- `credentialVersion`: the current database token version.
 
 The backend does not trust the token role by itself. Protected requests load
 the current user from the database and check the current role and account
@@ -90,8 +92,8 @@ Missing, malformed, invalid, and expired tokens return an authentication error.
 The default access-token lifetime is `1h`. It can be changed with
 `JWT_EXPIRES_IN`.
 
-The first version uses access tokens only. Refresh tokens and token blacklists
-are not included.
+Refresh tokens and token blacklists are not included. Credential-version checks
+invalidate older tokens after a required password change.
 
 ## Login Process
 
@@ -103,8 +105,17 @@ The backend:
 2. Finds the account.
 3. Compares the password with the bcrypt hash.
 4. Checks that the account is active.
-5. Updates `last_login_at`.
-6. Returns a JWT and safe account details.
+5. Checks whether a required password change is pending.
+6. Returns a restricted 10-minute password-change token when required.
+7. Otherwise updates `last_login_at` and returns a normal JWT.
+
+The restricted token uses purpose `required_password_change`. Normal
+authentication middleware rejects it. It works only with
+`POST /api/v1/auth/change-required-password`.
+
+Admin-created Students cannot access protected pages until they replace the
+temporary password. A successful change records the time, increases the
+credential version, and requires a new login.
 
 An incorrect email and an incorrect password return the same message. This
 avoids revealing whether an email exists.
@@ -175,7 +186,7 @@ The first version does not include:
 - Two-factor authentication.
 - Social login.
 - External identity providers.
-- Server-side token revocation or blacklisting.
+- Server-side token blacklisting.
 
 Changing an account to suspended or inactive still blocks an existing token
 because every protected request checks the current database record.

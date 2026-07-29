@@ -8,17 +8,27 @@ vi.mock('../services/api-client', () => ({
 }));
 
 vi.mock('../utils/token-storage', () => ({
+  getPasswordChangeToken: vi.fn(),
   saveAccessToken: vi.fn(),
+  savePasswordChangeToken: vi.fn(),
   removeAccessToken: vi.fn(),
+  removePasswordChangeToken: vi.fn(),
 }));
 
 import apiClient from '../services/api-client';
 import {
+  changeRequiredPassword,
   getCurrentUser,
   login,
   logout,
 } from '../features/authentication/services/auth.service';
-import { removeAccessToken, saveAccessToken } from '../utils/token-storage';
+import {
+  getPasswordChangeToken,
+  removeAccessToken,
+  removePasswordChangeToken,
+  saveAccessToken,
+  savePasswordChangeToken,
+} from '../utils/token-storage';
 
 describe('frontend authentication service', () => {
   beforeEach(() => {
@@ -40,6 +50,75 @@ describe('frontend authentication service', () => {
     });
 
     expect(saveAccessToken).toHaveBeenCalledWith('login-token');
+    expect(removePasswordChangeToken).toHaveBeenCalled();
+  });
+
+  test('required-change login stores only the restricted token', async () => {
+    apiClient.post.mockResolvedValue({
+      data: {
+        passwordChangeRequired: true,
+        passwordChangeToken: 'restricted-test-token',
+        user: { id: 'student-1', role: 'student' },
+      },
+    });
+
+    const result = await login({
+      email: 'student@example.com',
+      password: 'Temporary123',
+    });
+
+    expect(result.passwordChangeRequired).toBe(true);
+    expect(removeAccessToken).toHaveBeenCalled();
+    expect(savePasswordChangeToken).toHaveBeenCalledWith(
+      'restricted-test-token'
+    );
+    expect(saveAccessToken).not.toHaveBeenCalled();
+  });
+
+  test('submits a new password using the restricted token', async () => {
+    getPasswordChangeToken.mockReturnValue('restricted-test-token');
+    apiClient.post.mockResolvedValue({
+      data: { passwordChanged: true },
+    });
+
+    await expect(
+      changeRequiredPassword({
+        newPassword: 'NewStudent456',
+        confirmPassword: 'NewStudent456',
+      })
+    ).resolves.toEqual({ passwordChanged: true });
+
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/auth/change-required-password',
+      {
+        newPassword: 'NewStudent456',
+        confirmPassword: 'NewStudent456',
+      },
+      {
+        headers: {
+          Authorization: 'Bearer restricted-test-token',
+        },
+      }
+    );
+    expect(removePasswordChangeToken).toHaveBeenCalled();
+  });
+
+  test('removes an expired restricted token', async () => {
+    getPasswordChangeToken.mockReturnValue('expired-token');
+    apiClient.post.mockRejectedValue({
+      message: 'Password-change session has expired',
+      errors: [],
+      statusCode: 401,
+    });
+
+    await expect(
+      changeRequiredPassword({
+        newPassword: 'NewStudent456',
+        confirmPassword: 'NewStudent456',
+      })
+    ).rejects.toMatchObject({ statusCode: 401 });
+
+    expect(removePasswordChangeToken).toHaveBeenCalled();
   });
 
   test('logout removes the local token when the backend request fails', async () => {

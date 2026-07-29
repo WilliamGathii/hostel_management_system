@@ -40,6 +40,9 @@ erDiagram
     string password_hash
     string role
     string account_status
+    boolean must_change_password
+    datetime password_changed_at
+    int token_version
     datetime last_login_at
     datetime created_at
     datetime updated_at

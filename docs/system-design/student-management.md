@@ -52,7 +52,8 @@ link to each Student detail page. It also provides an Add Student action.
 
 Admins create Student accounts with a name, email, Student number, temporary
 password, and optional profile fields. New accounts always use the Student role
-and active status.
+and active status. They must replace the temporary password at first login
+before opening the Student dashboard.
 
 ## 6. Search
 

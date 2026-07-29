@@ -6,7 +6,26 @@ const login = async (req, res, next) => {
     const result = await authService.login(req.validatedBody);
 
     return sendSuccess(res, {
-      message: 'Login successful',
+      message: result.passwordChangeRequired
+        ? 'You must change your temporary password before continuing.'
+        : 'Login successful',
+      data: result,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const changeRequiredPassword = async (req, res, next) => {
+  try {
+    const result = await authService.changeRequiredPassword(
+      req.passwordChangeUser,
+      req.validatedBody
+    );
+
+    return sendSuccess(res, {
+      message:
+        'Your password has been changed. Please log in using your new password.',
       data: result,
     });
   } catch (error) {
@@ -45,6 +64,7 @@ const me = async (req, res, next) => {
 };
 
 module.exports = {
+  changeRequiredPassword,
   login,
   logout,
   me,

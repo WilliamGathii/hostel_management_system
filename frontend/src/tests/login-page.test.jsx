@@ -6,7 +6,7 @@ import { Route, Routes } from 'react-router-dom';
 import { LoginPage } from '../features/authentication/pages/LoginPage';
 import { createAuthValue, renderWithAuth } from './test-utils';
 
-const renderLogin = (authValue) =>
+const renderLogin = (authValue, route = '/login') =>
   renderWithAuth(
     <Routes>
       <Route element={<LoginPage />} path="/login" />
@@ -14,10 +14,14 @@ const renderLogin = (authValue) =>
         element={<div>Student dashboard destination</div>}
         path="/student/dashboard"
       />
+      <Route
+        element={<div>Change password destination</div>}
+        path="/change-password"
+      />
     </Routes>,
     {
       authValue,
-      route: '/login',
+      route,
     }
   );
 
@@ -74,6 +78,51 @@ describe('login page', () => {
     expect(
       await screen.findByText('Student dashboard destination')
     ).toBeInTheDocument();
+  });
+
+  test('redirects a temporary-password login to password change', async () => {
+    const user = userEvent.setup();
+    const login = vi.fn().mockResolvedValue({
+      passwordChangeRequired: true,
+      user: { id: 'student-1', role: 'student' },
+    });
+    renderLogin(createAuthValue({ login }));
+
+    await fillLogin(user);
+    await user.click(screen.getByRole('button', { name: /sign in/i }));
+
+    expect(
+      await screen.findByText('Change password destination')
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Student dashboard destination')
+    ).not.toBeInTheDocument();
+  });
+
+  test('clears the restricted state after a completed password change', async () => {
+    const clearPasswordChangeSession = vi.fn();
+    renderLogin(
+      createAuthValue({
+        clearPasswordChangeSession,
+        isPasswordChangeRequired: true,
+      }),
+      {
+        pathname: '/login',
+        state: {
+          notice:
+            'Your password has been changed. Log in using your new password.',
+          noticeVariant: 'success',
+          passwordChangeFinished: true,
+        },
+      }
+    );
+
+    expect(
+      screen.getByText(
+        'Your password has been changed. Log in using your new password.'
+      )
+    ).toBeInTheDocument();
+    expect(clearPasswordChangeSession).toHaveBeenCalled();
   });
 
   test('shows a safe error for incorrect credentials', async () => {
