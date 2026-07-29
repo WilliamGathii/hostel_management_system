@@ -42,9 +42,9 @@ The Student dashboard displays account information returned by `/auth/me`:
 
 It also provides quick links to the planned Student pages.
 
-Room allocation, maintenance, visitors, announcements, notifications, and
-payment records do not have live module data yet. The dashboard uses clear
-unavailable or empty states for these areas.
+The dashboard uses live role-specific statistics for room allocation,
+maintenance, visitors, unread notifications, and simulated payment records.
+Empty states remain visible when the database confirms that no records exist.
 
 ## 4. Admin Dashboard
 
@@ -59,9 +59,9 @@ The Admin dashboard provides quick links for managing:
 - Simulated payments
 - Reports
 
-Summary cards are prepared for future data about students, rooms, allocations,
-maintenance, visitors, and simulated payments. They display `Not available
-yet` instead of invented values.
+Summary cards use live data about students, rooms, active allocations, and open
+maintenance requests. The occupancy panel uses real capacity and occupancy
+values.
 
 Recent activity remains empty until audit logging and module activity are
 connected.
@@ -73,8 +73,8 @@ The Maintenance Staff dashboard provides links to:
 - Assigned requests
 - Maintenance history
 
-Cards are prepared for assigned, in-progress, completed, and urgent request
-totals. No counts are shown until real maintenance data is available.
+Cards show live assigned, in-progress, completed, and urgent request totals for
+the signed-in Maintenance Staff member.
 
 The page also explains the approved maintenance priority and status labels.
 These labels are guidance and are not presented as real requests.
@@ -144,15 +144,9 @@ working.
 
 ## 11. Current Data Limitations
 
-The planned endpoint `GET /api/v1/reports/dashboard` is documented but is not
-implemented in the backend.
-
-The frontend does not call this unfinished endpoint. Dashboard content uses
-only authenticated account information, approved navigation links, static
-workflow explanations, and unavailable states.
-
-Full module records and statistics will be connected after their backend
-features are developed.
+The endpoint `GET /api/v1/reports/dashboard` returns live statistics selected
+for the signed-in role. A failed statistics request shows a safe error state
+and does not expose internal database information.
 
 ## 12. Simulated Payment Notice
 
@@ -174,19 +168,16 @@ Frontend tests cover:
 - Security Staff dashboard content
 - Correct dashboard routes
 - Wrong-role redirects
-- Future module placeholders
+- Live dashboard statistics
+- Payment and report routes
 
-The complete frontend suite contains 43 passing tests across 10 test files.
-Frontend linting and the production build also pass.
+The frontend suite, linting, and production build must pass before merging.
 
 Responsive visual checks were completed with safe mocked authentication
 responses. No production mock data or test account was committed.
 
 ## 14. Features Planned for Later
 
-Detailed pages for students, rooms, allocations, maintenance, visitors,
-announcements, notifications, simulated payments, reports, and audit logs
-remain placeholders.
-
-Reports and charts will be connected only after related modules provide real
-data. No chart with invented data is included.
+Audit-log screens remain planned for a later step. Dashboard and report totals
+are displayed only when returned by the backend. No chart with invented data is
+included.

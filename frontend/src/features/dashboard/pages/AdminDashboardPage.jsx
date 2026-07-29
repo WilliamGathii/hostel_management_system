@@ -11,6 +11,8 @@ import { Link } from 'react-router-dom';
 
 import { Card } from '../../../components/common/Card';
 import { PageContainer } from '../../../components/common/PageContainer';
+import { ErrorState } from '../../../components/feedback/ErrorState';
+import { Skeleton } from '../../../components/feedback/Skeleton';
 import { DASHBOARD_BY_ROLE } from '../../../config/dashboard';
 import { useAuth } from '../../../hooks/useAuth';
 import { DashboardEmptyState } from '../components/DashboardEmptyState';
@@ -18,16 +20,24 @@ import { DashboardNotice } from '../components/DashboardNotice';
 import { DashboardPageState } from '../components/DashboardPageState';
 import { DashboardStatCard } from '../components/DashboardStatCard';
 import { DashboardWelcome } from '../components/DashboardWelcome';
+import { useDashboardStats } from '../hooks/useDashboardStats';
 
 const summaries = [
-  { title: 'Students', Icon: LuGraduationCap, tone: 'information' },
-  { title: 'Rooms', Icon: LuBedDouble, tone: 'primary' },
   {
+    key: 'students',
+    title: 'Students',
+    Icon: LuGraduationCap,
+    tone: 'information',
+  },
+  { key: 'rooms', title: 'Rooms', Icon: LuBedDouble, tone: 'primary' },
+  {
+    key: 'active_allocations',
     title: 'Active allocations',
     Icon: LuClipboardCheck,
     tone: 'success',
   },
   {
+    key: 'open_maintenance',
     title: 'Maintenance requests',
     Icon: LuWrench,
     tone: 'warning',
@@ -75,6 +85,12 @@ function OperationLink({ label, path, Icon }) {
 
 export function AdminDashboardPage() {
   const { authError, isLoading, user } = useAuth();
+  const {
+    stats,
+    isLoading: statsLoading,
+    hasError: statsError,
+    reload,
+  } = useDashboardStats();
   const dashboard = DASHBOARD_BY_ROLE.admin;
 
   return (
@@ -91,6 +107,16 @@ export function AdminDashboardPage() {
           title={dashboard.title}
         />
 
+        {statsError ? (
+          <Card>
+            <ErrorState
+              description="Live dashboard statistics could not be loaded."
+              onRetry={reload}
+              title="Statistics unavailable"
+            />
+          </Card>
+        ) : null}
+
         <section
           aria-label="Hostel summary"
           className="grid grid-cols-2 gap-4 xl:grid-cols-4"
@@ -98,7 +124,8 @@ export function AdminDashboardPage() {
           {summaries.map((summary) => (
             <DashboardStatCard
               key={summary.title}
-              unavailableText="No data"
+              isLoading={statsLoading}
+              value={stats?.[summary.key]}
               {...summary}
             />
           ))}
@@ -108,9 +135,7 @@ export function AdminDashboardPage() {
           <Card className="min-h-[24rem]">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold text-information">
-                  Rooms
-                </p>
+                <p className="text-xs font-semibold text-information">Rooms</p>
                 <h2 className="mt-1 text-lg font-bold text-text">
                   Hostel Occupancy
                 </h2>
@@ -127,11 +152,47 @@ export function AdminDashboardPage() {
               </Link>
             </div>
             <div className="mt-8">
-              <DashboardEmptyState
-                description="Occupancy information will appear when room records are available."
-                Icon={LuBedDouble}
-                title="No rooms have been added."
-              />
+              {statsLoading ? (
+                <Skeleton className="h-40 w-full" />
+              ) : Number(stats?.rooms) > 0 ? (
+                <div className="space-y-6">
+                  <div>
+                    <div className="flex items-end justify-between gap-4">
+                      <div>
+                        <p className="text-3xl font-bold text-text">
+                          {stats.occupancy_rate}%
+                        </p>
+                        <p className="mt-1 text-sm text-muted">
+                          {stats.current_occupancy} of {stats.total_capacity}{' '}
+                          beds occupied
+                        </p>
+                      </div>
+                      <p className="text-sm font-semibold text-success">
+                        {stats.available_beds} beds available
+                      </p>
+                    </div>
+                    <div
+                      aria-label={`${stats.occupancy_rate}% hostel occupancy`}
+                      className="mt-4 h-3 overflow-hidden rounded-full bg-periwinkle-light"
+                      role="progressbar"
+                      aria-valuemax="100"
+                      aria-valuemin="0"
+                      aria-valuenow={stats.occupancy_rate}
+                    >
+                      <div
+                        className="h-full rounded-full bg-primary"
+                        style={{ width: `${stats.occupancy_rate}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <DashboardEmptyState
+                  description="Occupancy information will appear when room records are available."
+                  Icon={LuBedDouble}
+                  title="No rooms have been added."
+                />
+              )}
             </div>
           </Card>
 
@@ -156,19 +217,40 @@ export function AdminDashboardPage() {
             <h2 className="text-lg font-bold text-text">
               Maintenance overview
             </h2>
-            <DashboardEmptyState
-              description="New maintenance requests will appear here for review and assignment."
-              Icon={LuWrench}
-              title="No maintenance requests are available."
-            />
+            {Number(stats?.open_maintenance) > 0 ? (
+              <p className="mt-6 text-sm text-muted">
+                <span className="text-2xl font-bold text-text">
+                  {stats.open_maintenance}
+                </span>{' '}
+                open maintenance requests need review or progress.
+              </p>
+            ) : (
+              <DashboardEmptyState
+                description="New maintenance requests will appear here for review and assignment."
+                Icon={LuWrench}
+                title="No maintenance requests are available."
+              />
+            )}
           </Card>
           <Card>
             <h2 className="text-lg font-bold text-text">Allocation overview</h2>
-            <DashboardEmptyState
-              description="Current room allocations will appear here."
-              Icon={LuClipboardCheck}
-              title="No room allocations are available."
-            />
+            {Number(stats?.active_allocations) > 0 ? (
+              <p className="mt-6 text-sm text-muted">
+                <span className="text-2xl font-bold text-text">
+                  {stats.active_allocations}
+                </span>{' '}
+                {stats.active_allocations === 1
+                  ? 'student currently has'
+                  : 'students currently have'}{' '}
+                active room allocations.
+              </p>
+            ) : (
+              <DashboardEmptyState
+                description="Current room allocations will appear here."
+                Icon={LuClipboardCheck}
+                title="No room allocations are available."
+              />
+            )}
           </Card>
         </div>
 

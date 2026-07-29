@@ -17,11 +17,11 @@ The Smart Hostel Management System is a planned web application for managing hos
 
 ## Current Project Status
 
-The project setup, scope, system design, backend foundation, authentication,
-frontend foundation, and four role dashboards are complete. Student Profile
-and Admin Student Management are being developed on
-`feature/student-management`. Other system modules remain placeholders for
-their later development steps.
+The project setup, system design, authentication, responsive frontend, Student
+management, rooms, allocations, maintenance, visitors, announcements, in-app
+notifications, simulated payments, reports, and role dashboards are complete
+on `develop` or their current reviewed feature branch. Audit logs, final
+testing, and deployment preparation remain.
 
 ## Feature-Based Development Timeline
 
@@ -264,8 +264,8 @@ script requires a local development database and refuses to run in production.
 The frontend login page uses these authentication endpoints. Admin and staff
 accounts cannot use public registration.
 
-Rooms, allocations, maintenance, visitors, payments, announcements,
-notifications, reports, and audit-log features have not been developed yet.
+Room, allocation, maintenance, visitor, announcement, notification, simulated
+payment, and report features are available. Audit-log screens remain planned.
 
 ## Student Management
 

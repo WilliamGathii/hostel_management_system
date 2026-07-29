@@ -19,6 +19,7 @@ import { DashboardEmptyState } from '../components/DashboardEmptyState';
 import { DashboardNotice } from '../components/DashboardNotice';
 import { DashboardPageState } from '../components/DashboardPageState';
 import { DashboardWelcome } from '../components/DashboardWelcome';
+import { useDashboardStats } from '../hooks/useDashboardStats';
 
 const displayValue = (value) => value || 'Not provided';
 
@@ -36,6 +37,7 @@ function PanelLink({ children, to }) {
 
 export function StudentDashboardPage() {
   const { authError, isLoading, user } = useAuth();
+  const { stats } = useDashboardStats();
   const dashboard = DASHBOARD_BY_ROLE.student;
 
   return (
@@ -69,20 +71,27 @@ export function StudentDashboardPage() {
                 aria-hidden="true"
               />
             </div>
-            <DashboardEmptyState
-              description="An Admin will assign your room. Your allocation will appear here."
-              Icon={LuBedDouble}
-              title="No room allocation is available."
-            />
+            {stats?.has_active_allocation ? (
+              <div className="my-8 rounded-card bg-success-soft p-5">
+                <StatusChip variant="success">Active allocation</StatusChip>
+                <p className="mt-3 text-sm leading-6 text-success">
+                  Your current room allocation is active. Open My Room to view
+                  the room information.
+                </p>
+              </div>
+            ) : (
+              <DashboardEmptyState
+                description="An Admin will assign your room. Your allocation will appear here."
+                Icon={LuBedDouble}
+                title="No room allocation is available."
+              />
+            )}
             <PanelLink to="/student/room">View room allocation</PanelLink>
           </Card>
 
           <Card>
             <div className="flex items-center gap-3">
-              <LuUserRound
-                className="size-5 text-primary"
-                aria-hidden="true"
-              />
+              <LuUserRound className="size-5 text-primary" aria-hidden="true" />
               <h2 className="text-lg font-bold text-text">Profile summary</h2>
             </div>
             <dl className="mt-6 space-y-5">
@@ -127,11 +136,20 @@ export function StudentDashboardPage() {
               <LuWrench className="size-5 text-primary" aria-hidden="true" />
               <h2 className="text-lg font-bold text-text">Maintenance</h2>
             </div>
-            <DashboardEmptyState
-              description="Submitted requests and progress updates will appear here."
-              Icon={LuWrench}
-              title="No maintenance requests are available."
-            />
+            {Number(stats?.open_maintenance) > 0 ? (
+              <p className="my-6 text-sm text-muted">
+                <span className="text-2xl font-bold text-text">
+                  {stats.open_maintenance}
+                </span>{' '}
+                maintenance requests are currently open.
+              </p>
+            ) : (
+              <DashboardEmptyState
+                description="Submitted requests and progress updates will appear here."
+                Icon={LuWrench}
+                title="No maintenance requests are available."
+              />
+            )}
             <PanelLink to="/student/maintenance">
               Submit maintenance request
             </PanelLink>
@@ -145,11 +163,20 @@ export function StudentDashboardPage() {
               />
               <h2 className="text-lg font-bold text-text">Visitors</h2>
             </div>
-            <DashboardEmptyState
-              description="Registered visitors and approval results will appear here."
-              Icon={LuUsersRound}
-              title="No visitor registrations are available."
-            />
+            {Number(stats?.pending_visitors) > 0 ? (
+              <p className="my-6 text-sm text-muted">
+                <span className="text-2xl font-bold text-text">
+                  {stats.pending_visitors}
+                </span>{' '}
+                visitor registrations are awaiting review.
+              </p>
+            ) : (
+              <DashboardEmptyState
+                description="Registered visitors and approval results will appear here."
+                Icon={LuUsersRound}
+                title="No visitor registrations are available."
+              />
+            )}
             <PanelLink to="/student/visitors">Register a visitor</PanelLink>
           </Card>
         </div>
@@ -179,10 +206,16 @@ export function StudentDashboardPage() {
                 <h2 className="text-base font-bold text-text">Notifications</h2>
               </div>
               <p className="mt-4 text-sm text-muted">
-                No in-app notifications are available.
+                {Number(stats?.unread_notifications) > 0
+                  ? `${stats.unread_notifications} unread in-app notification${
+                      stats.unread_notifications === 1 ? '' : 's'
+                    }.`
+                  : 'No unread in-app notifications are available.'}
               </p>
               <div className="mt-3">
-                <PanelLink to="/student/notifications">Open notifications</PanelLink>
+                <PanelLink to="/student/notifications">
+                  Open notifications
+                </PanelLink>
               </div>
             </Card>
             <Card>
@@ -196,18 +229,23 @@ export function StudentDashboardPage() {
                 </h2>
               </div>
               <p className="mt-4 text-sm text-muted">
-                No simulated payment records have been added.
+                {Number(stats?.payment_records) > 0
+                  ? `${stats.payment_records} simulated payment record${
+                      stats.payment_records === 1 ? '' : 's'
+                    } ${stats.payment_records === 1 ? 'is' : 'are'} available.`
+                  : 'No simulated payment records have been added.'}
               </p>
               <div className="mt-3">
-                <PanelLink to="/student/payments">View payment records</PanelLink>
+                <PanelLink to="/student/payments">
+                  View payment records
+                </PanelLink>
               </div>
             </Card>
           </div>
         </div>
 
         <DashboardNotice title="Payment records" variant="warning">
-          These records are simulated and do not represent real money
-          transfers.
+          These records are simulated and do not represent real money transfers.
         </DashboardNotice>
       </PageContainer>
     </DashboardPageState>

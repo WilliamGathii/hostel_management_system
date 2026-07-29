@@ -6,6 +6,8 @@ const announcementRoutes = require('./announcement.routes');
 const healthRoutes = require('./health.routes');
 const maintenanceRoutes = require('./maintenance.routes');
 const notificationRoutes = require('./notification.routes');
+const paymentRoutes = require('./payment.routes');
+const reportRoutes = require('./report.routes');
 const roomRoutes = require('./room.routes');
 const studentRoutes = require('./student.routes');
 const visitorRoutes = require('./visitor.routes');
@@ -21,5 +23,7 @@ router.use('/maintenance-requests', maintenanceRoutes);
 router.use('/visitors', visitorRoutes);
 router.use('/announcements', announcementRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/payments', paymentRoutes);
+router.use('/reports', reportRoutes);
 
 module.exports = router;
