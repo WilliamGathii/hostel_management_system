@@ -10,6 +10,19 @@ vi.mock('../features/students/services/student.service', () => ({
   updateStudent: vi.fn(),
   updateStudentStatus: vi.fn(),
 }));
+vi.mock('../features/rooms/services/room.service', () => ({
+  getAllocations: vi.fn(),
+}));
+vi.mock('../features/payments/services/payment.service', () => ({
+  createPayment: vi.fn(),
+  getPayments: vi.fn(),
+}));
+vi.mock('../features/maintenance/services/maintenance.service', () => ({
+  getMaintenanceRequests: vi.fn(),
+}));
+vi.mock('../features/visitors/services/visitor.service', () => ({
+  getVisitors: vi.fn(),
+}));
 
 import { AdminStudentCreatePage } from '../features/students/pages/AdminStudentCreatePage';
 import { AdminStudentDetailPage } from '../features/students/pages/AdminStudentDetailPage';
@@ -21,6 +34,13 @@ import {
   updateStudent,
   updateStudentStatus,
 } from '../features/students/services/student.service';
+import { getAllocations } from '../features/rooms/services/room.service';
+import {
+  createPayment,
+  getPayments,
+} from '../features/payments/services/payment.service';
+import { getMaintenanceRequests } from '../features/maintenance/services/maintenance.service';
+import { getVisitors } from '../features/visitors/services/visitor.service';
 import { renderWithAuth } from './test-utils';
 
 const student = {
@@ -48,7 +68,7 @@ const pagination = {
 
 const renderList = () => renderWithAuth(<AdminStudentListPage />);
 
-const renderDetail = () =>
+const renderDetail = (tab = '') =>
   renderWithAuth(
     <Routes>
       <Route
@@ -57,7 +77,7 @@ const renderDetail = () =>
       />
     </Routes>,
     {
-      route: `/admin/students/${student.id}`,
+      route: `/admin/students/${student.id}${tab ? `?tab=${tab}` : ''}`,
     }
   );
 
@@ -195,23 +215,56 @@ describe('Admin Student detail page', () => {
     createStudent.mockReset();
     updateStudent.mockReset();
     updateStudentStatus.mockReset();
+    getAllocations.mockReset();
+    getPayments.mockReset();
+    getMaintenanceRequests.mockReset();
+    getVisitors.mockReset();
+    createPayment.mockReset();
+    getAllocations.mockResolvedValue({
+      allocations: [],
+      pagination: { page: 1, total: 0, totalPages: 0 },
+    });
+    getPayments.mockResolvedValue({
+      payments: [],
+      summary: {
+        total_records: 0,
+        total_paid_amount: '0.00',
+        latest_payment_date: null,
+        latest_payment_status: null,
+      },
+      pagination: { page: 1, total: 0, totalPages: 0 },
+    });
+    getMaintenanceRequests.mockResolvedValue({
+      maintenance_requests: [],
+      pagination: { page: 1, total: 0, totalPages: 0 },
+    });
+    getVisitors.mockResolvedValue({
+      visitors: [],
+      pagination: { page: 1, total: 0, totalPages: 0 },
+    });
   });
 
-  test('loads safe details without future records or account controls', async () => {
+  test('opens the safe Overview tab by default', async () => {
     getStudentById.mockResolvedValue(student);
 
     renderDetail();
 
     expect(await screen.findByText('Amina Student')).toBeInTheDocument();
-    expect(screen.getByText('STU001')).toBeInTheDocument();
-    expect(screen.getByText('Software Engineering')).toBeInTheDocument();
+    expect(screen.getByText(/STU001/)).toBeInTheDocument();
+    expect(screen.getAllByText('Software Engineering').length).toBeGreaterThan(
+      0
+    );
+    expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
     expect(screen.queryByText('must-never-appear')).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/role/i)).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: /delete/i })
     ).not.toBeInTheDocument();
     expect(screen.getByText('Account information')).toBeInTheDocument();
-    expect(screen.getByText('Account status')).toBeInTheDocument();
+    expect(screen.getAllByText('Account status').length).toBeGreaterThan(0);
   });
 
   test('requires confirmation and updates an approved status', async () => {
@@ -257,7 +310,7 @@ describe('Admin Student detail page', () => {
 
     renderDetail();
     await user.click(
-      await screen.findByRole('button', { name: /edit account/i })
+      await screen.findByRole('button', { name: /edit student/i })
     );
     const nameInput = screen.getByRole('textbox', { name: /full name/i });
     await user.clear(nameInput);
@@ -279,8 +332,140 @@ describe('Admin Student detail page', () => {
     expect(updatePayload).not.toHaveProperty('role');
     expect(updatePayload).not.toHaveProperty('account_status');
     expect(
-      await screen.findByText('Student account updated successfully.')
+      await screen.findByText('Student information updated successfully.')
     ).toBeInTheDocument();
+  });
+
+  test('uses URL tabs and requests records for the selected Student', async () => {
+    const user = userEvent.setup();
+    getStudentById.mockResolvedValue(student);
+
+    renderDetail();
+    await screen.findByText('Amina Student');
+    await user.click(screen.getByRole('tab', { name: 'Payments' }));
+
+    expect(screen.getByRole('tab', { name: 'Payments' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
+    expect(getAllocations).toHaveBeenCalledWith(
+      expect.objectContaining({ student_id: student.id })
+    );
+    expect(getPayments).toHaveBeenCalledWith(
+      expect.objectContaining({ student_id: student.id })
+    );
+    expect(getMaintenanceRequests).toHaveBeenCalledWith(
+      expect.objectContaining({ student_id: student.id })
+    );
+    expect(getVisitors).toHaveBeenCalledWith(
+      expect.objectContaining({ student_id: student.id })
+    );
+    expect(
+      screen.getByText('No payment records have been added for this student.')
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/balance due/i)).not.toBeInTheDocument();
+  });
+
+  test('locks contextual payment creation to the current Student', async () => {
+    const user = userEvent.setup();
+    const activeAllocation = {
+      id: 'allocation-1',
+      student_id: student.id,
+      room_number: 'A101',
+      allocation_status: 'active',
+    };
+    getStudentById.mockResolvedValue(student);
+    getAllocations.mockResolvedValue({
+      allocations: [activeAllocation],
+      pagination: { page: 1, total: 1, totalPages: 1 },
+    });
+
+    renderDetail('payments');
+    await screen.findByText('Payment history');
+    await user.click(
+      screen.getByRole('button', { name: 'Add Payment Record' })
+    );
+
+    expect(
+      screen.getByText('This student is locked to the current record.')
+    ).toBeInTheDocument();
+    expect(screen.getAllByText('Amina Student').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('STU001').length).toBeGreaterThan(0);
+    expect(
+      screen.queryByRole('combobox', { name: 'Student allocation' })
+    ).not.toBeInTheDocument();
+    expect(
+      document.querySelector('input[name="room_allocation_id"]')
+    ).toHaveValue(activeAllocation.id);
+  });
+
+  test('renders real Student payment records in table and mobile card layouts', async () => {
+    getStudentById.mockResolvedValue(student);
+    getPayments.mockResolvedValue({
+      payments: [
+        {
+          id: 'payment-1',
+          amount: '1500.00',
+          payment_method: 'Cash',
+          transaction_reference: 'SIM-001',
+          payment_date: '2026-07-29',
+          payment_status: 'paid',
+        },
+      ],
+      summary: {
+        total_records: 1,
+        total_paid_amount: '1500.00',
+        latest_payment_date: '2026-07-29',
+        latest_payment_status: 'paid',
+      },
+      pagination: { page: 1, total: 1, totalPages: 1 },
+    });
+
+    renderDetail('payments');
+
+    expect((await screen.findAllByText('SIM-001')).length).toBeGreaterThan(1);
+    expect(screen.getByText('Total recorded as paid')).toBeInTheDocument();
+    expect(screen.queryByText(/balance due/i)).not.toBeInTheDocument();
+  });
+
+  test('renders only filtered maintenance and visitor records', async () => {
+    const user = userEvent.setup();
+    getStudentById.mockResolvedValue(student);
+    getMaintenanceRequests.mockResolvedValue({
+      maintenance_requests: [
+        {
+          id: 'request-1',
+          title: 'Leaking tap',
+          room_number: 'A101',
+          priority: 'high',
+          status: 'submitted',
+          submitted_at: '2026-07-29',
+          assigned_staff_name: null,
+        },
+      ],
+      pagination: { page: 1, total: 1, totalPages: 1 },
+    });
+    getVisitors.mockResolvedValue({
+      visitors: [
+        {
+          id: 'visitor-1',
+          visitor_name: 'Jane Visitor',
+          visit_date: '2026-07-30',
+          purpose: 'Family visit',
+          approval_status: 'approved',
+          entry_time: null,
+          exit_time: null,
+        },
+      ],
+      pagination: { page: 1, total: 1, totalPages: 1 },
+    });
+
+    renderDetail();
+    await screen.findByText('Amina Student');
+    await user.click(screen.getByRole('tab', { name: 'Maintenance' }));
+    expect(screen.getAllByText('Leaking tap').length).toBeGreaterThan(0);
+    await user.click(screen.getByRole('tab', { name: 'Visitors' }));
+    expect(screen.getAllByText('Jane Visitor').length).toBeGreaterThan(0);
   });
 
   test('shows a safe missing-Student state', async () => {

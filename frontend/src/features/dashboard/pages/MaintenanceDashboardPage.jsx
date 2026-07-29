@@ -18,21 +18,25 @@ import { useAuth } from '../../../hooks/useAuth';
 import { DashboardEmptyState } from '../components/DashboardEmptyState';
 import { DashboardPageState } from '../components/DashboardPageState';
 import { DashboardWelcome } from '../components/DashboardWelcome';
+import { useDashboardStats } from '../hooks/useDashboardStats';
 
 const workStates = [
   {
+    key: 'urgent',
     title: 'Urgent work',
     message: 'No urgent requests are assigned.',
     Icon: LuCircleAlert,
     tone: 'text-error',
   },
   {
+    key: 'in_progress',
     title: 'In progress',
     message: 'No requests are in progress.',
     Icon: LuClock3,
     tone: 'text-warning',
   },
   {
+    key: 'completed',
     title: 'Completed work',
     message: 'No completed requests are available.',
     Icon: LuCircleCheck,
@@ -42,6 +46,7 @@ const workStates = [
 
 export function MaintenanceDashboardPage() {
   const { authError, isLoading, user } = useAuth();
+  const { stats } = useDashboardStats();
   const dashboard = DASHBOARD_BY_ROLE.maintenance_staff;
 
   return (
@@ -80,11 +85,23 @@ export function MaintenanceDashboardPage() {
                 <LuArrowRight className="size-4" aria-hidden="true" />
               </Link>
             </div>
-            <DashboardEmptyState
-              description="Assigned maintenance requests will appear here in priority order."
-              Icon={LuClipboardList}
-              title="No assigned maintenance requests are available."
-            />
+            {Number(stats?.assigned_total) > 0 ? (
+              <div className="mt-8 rounded-card bg-periwinkle-light p-6">
+                <p className="text-3xl font-bold text-text">
+                  {stats.assigned_total}
+                </p>
+                <p className="mt-2 text-sm text-muted">
+                  requests are assigned to your account across active and
+                  completed work.
+                </p>
+              </div>
+            ) : (
+              <DashboardEmptyState
+                description="Assigned maintenance requests will appear here in priority order."
+                Icon={LuClipboardList}
+                title="No assigned maintenance requests are available."
+              />
+            )}
           </Card>
 
           <Card>
@@ -118,15 +135,24 @@ export function MaintenanceDashboardPage() {
         </div>
 
         <section aria-labelledby="work-status-heading">
-          <h2 className="mb-4 text-lg font-bold text-text" id="work-status-heading">
+          <h2
+            className="mb-4 text-lg font-bold text-text"
+            id="work-status-heading"
+          >
             Work status
           </h2>
           <div className="grid gap-6 lg:grid-cols-[1fr_1.15fr_0.85fr]">
-            {workStates.map(({ Icon, message, title, tone }) => (
+            {workStates.map(({ Icon, key, message, title, tone }) => (
               <Card key={title}>
                 <Icon className={`size-5 ${tone}`} aria-hidden="true" />
                 <h3 className="mt-4 font-bold text-text">{title}</h3>
-                <p className="mt-2 text-sm text-muted">{message}</p>
+                <p className="mt-2 text-sm text-muted">
+                  {Number(stats?.[key]) > 0
+                    ? `${stats[key]} request${
+                        stats[key] === 1 ? '' : 's'
+                      } in this group.`
+                    : message}
+                </p>
               </Card>
             ))}
           </div>

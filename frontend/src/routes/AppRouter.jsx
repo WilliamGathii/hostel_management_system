@@ -9,6 +9,8 @@ import { SecurityDashboardPage } from '../features/dashboard/pages/SecurityDashb
 import { StudentDashboardPage } from '../features/dashboard/pages/StudentDashboardPage';
 import { MaintenanceDetailPage } from '../features/maintenance/pages/MaintenanceDetailPage';
 import { MaintenancePage } from '../features/maintenance/pages/MaintenancePage';
+import { PaymentPage } from '../features/payments/pages/PaymentPage';
+import { ReportPage } from '../features/reports/pages/ReportPage';
 import { AdminAllocationPage } from '../features/rooms/pages/AdminAllocationPage';
 import { AdminRoomDetailPage } from '../features/rooms/pages/AdminRoomDetailPage';
 import { AdminRoomListPage } from '../features/rooms/pages/AdminRoomListPage';
@@ -74,15 +76,7 @@ export function AppRouter() {
               element={<NotificationPage />}
               path="/student/notifications"
             />
-            <Route
-              element={
-                <Placeholder
-                  description="View your simulated payment records."
-                  title="Payment records"
-                />
-              }
-              path="/student/payments"
-            />
+            <Route element={<PaymentPage />} path="/student/payments" />
           </Route>
 
           <Route element={<RoleRoute allowedRoles={['admin']} />}>
@@ -117,24 +111,8 @@ export function AppRouter() {
             />
             <Route element={<AnnouncementPage />} path="/admin/announcements" />
             <Route element={<NotificationPage />} path="/admin/notifications" />
-            <Route
-              element={
-                <Placeholder
-                  description="Manage simulated payment records."
-                  title="Payment records"
-                />
-              }
-              path="/admin/payments"
-            />
-            <Route
-              element={
-                <Placeholder
-                  description="View planned hostel reports."
-                  title="Reports"
-                />
-              }
-              path="/admin/reports"
-            />
+            <Route element={<PaymentPage />} path="/admin/payments" />
+            <Route element={<ReportPage />} path="/admin/reports" />
             <Route
               element={
                 <Placeholder

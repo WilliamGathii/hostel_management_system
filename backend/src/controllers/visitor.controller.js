@@ -8,6 +8,7 @@ const listOptions = (query) => ({
   approvalStatus: query.approval_status || '',
   verificationStatus: query.verification_status || '',
   visitDate: query.visit_date || '',
+  studentId: query.student_id || '',
 });
 
 const createVisitor = async (req, res, next) => {

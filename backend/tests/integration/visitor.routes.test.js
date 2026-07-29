@@ -19,6 +19,7 @@ const visitorService = require('../../src/services/visitor.service');
 const { signAuthToken } = require('../../src/utils/jwt');
 
 const visitorId = '11111111-1111-4111-8111-111111111111';
+const studentId = '22222222-2222-4222-8222-222222222222';
 const users = {
   student: {
     id: 'visitor-student-user',
@@ -114,6 +115,27 @@ describe('visitor routes', () => {
       expect(response.status).toBe(200);
     }
   );
+
+  test('Admin can filter visitor records by Student identifier', async () => {
+    const response = await request(app)
+      .get(`/api/v1/visitors?student_id=${studentId}`)
+      .set('Authorization', authorization(users.admin));
+
+    expect(response.status).toBe(200);
+    expect(visitorService.listVisitors).toHaveBeenCalledWith(
+      expect.objectContaining({ role: 'admin' }),
+      expect.objectContaining({ studentId })
+    );
+  });
+
+  test('Visitor Student filter validates identifiers', async () => {
+    const response = await request(app)
+      .get('/api/v1/visitors?student_id=not-a-uuid')
+      .set('Authorization', authorization(users.admin));
+
+    expect(response.status).toBe(422);
+    expect(visitorService.listVisitors).not.toHaveBeenCalled();
+  });
 
   test('Maintenance Staff cannot view visitors', async () => {
     const response = await request(app)

@@ -1,10 +1,15 @@
 import { screen } from '@testing-library/react';
-import { describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
+
+vi.mock('../features/dashboard/hooks/useDashboardStats', () => ({
+  useDashboardStats: vi.fn(),
+}));
 
 import { AdminDashboardPage } from '../features/dashboard/pages/AdminDashboardPage';
 import { MaintenanceDashboardPage } from '../features/dashboard/pages/MaintenanceDashboardPage';
 import { SecurityDashboardPage } from '../features/dashboard/pages/SecurityDashboardPage';
 import { StudentDashboardPage } from '../features/dashboard/pages/StudentDashboardPage';
+import { useDashboardStats } from '../features/dashboard/hooks/useDashboardStats';
 import { createAuthValue, renderWithAuth } from './test-utils';
 
 const renderDashboard = (component, user) =>
@@ -16,6 +21,15 @@ const renderDashboard = (component, user) =>
   });
 
 describe('role dashboards', () => {
+  beforeEach(() => {
+    useDashboardStats.mockReturnValue({
+      stats: null,
+      isLoading: false,
+      hasError: false,
+      reload: vi.fn(),
+    });
+  });
+
   test('shows Student account information and approved quick actions', () => {
     renderDashboard(<StudentDashboardPage />, {
       full_name: 'Test Student',
@@ -65,9 +79,7 @@ describe('role dashboards', () => {
     ).not.toBeInTheDocument();
     expect(screen.getAllByText('No data')).toHaveLength(4);
     expect(screen.queryByText('0')).not.toBeInTheDocument();
-    expect(
-      screen.getByText('No rooms have been added.')
-    ).toBeInTheDocument();
+    expect(screen.getByText('No rooms have been added.')).toBeInTheDocument();
     expect(
       screen.getByText(/No real money is transferred/)
     ).toBeInTheDocument();
@@ -115,9 +127,7 @@ describe('role dashboards', () => {
     expect(
       screen.getByText('Open an approved visitor record.')
     ).toBeInTheDocument();
-    expect(
-      screen.getByText('Record entry or exit time.')
-    ).toBeInTheDocument();
+    expect(screen.getByText('Record entry or exit time.')).toBeInTheDocument();
     expect(
       screen.getByText('No approved visitors are available.')
     ).toBeInTheDocument();
@@ -127,5 +137,45 @@ describe('role dashboards', () => {
     expect(
       screen.queryByRole('button', { name: /approve|reject/i })
     ).not.toBeInTheDocument();
+  });
+
+  test('shows verified live Admin statistics without invented values', () => {
+    useDashboardStats.mockReturnValue({
+      stats: {
+        students: 12,
+        active_students: 11,
+        rooms: 5,
+        available_rooms: 1,
+        occupied_rooms: 4,
+        active_allocations: 8,
+        open_maintenance: 3,
+        pending_maintenance: 2,
+        pending_visitors: 1,
+        visitors_inside: 2,
+        simulated_payments_recorded: 9,
+        total_capacity: 10,
+        current_occupancy: 8,
+        available_beds: 2,
+        occupancy_rate: 80,
+      },
+      isLoading: false,
+      hasError: false,
+      reload: vi.fn(),
+    });
+    renderDashboard(<AdminDashboardPage />, {
+      full_name: 'Test Admin',
+      email: 'admin@example.com',
+      role: 'admin',
+      account_status: 'active',
+    });
+    expect(screen.getByText('80%')).toBeInTheDocument();
+    expect(screen.getByText(/8 of 10 beds occupied/)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        (_, element) =>
+          element?.tagName === 'P' &&
+          element.textContent.includes('3 open maintenance requests')
+      )
+    ).toBeInTheDocument();
   });
 });

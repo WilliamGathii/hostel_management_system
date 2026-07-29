@@ -24,12 +24,16 @@ const variants = {
   },
 };
 
-export function Alert({ children, variant = 'information' }) {
+export function Alert({
+  children,
+  className: additionalClassName = '',
+  variant = 'information',
+}) {
   const { className, Icon } = variants[variant] || variants.information;
 
   return (
     <div
-      className={`flex items-start gap-3 rounded-card px-4 py-3 text-sm leading-6 ${className}`}
+      className={`flex items-start gap-3 rounded-card px-4 py-3 text-sm leading-6 ${className} ${additionalClassName}`}
       role={variant === 'error' ? 'alert' : 'status'}
     >
       <Icon className="mt-0.5 size-5 shrink-0" aria-hidden="true" />

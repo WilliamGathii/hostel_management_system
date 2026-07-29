@@ -118,6 +118,7 @@ const buildFilters = ({
   approvalStatus,
   verificationStatus,
   visitDate,
+  studentId,
   ownerUserId,
   securityView,
 }) => {
@@ -144,6 +145,9 @@ const buildFilters = ({
   }
   if (visitDate) {
     add(visitDate, 'v.visit_date');
+  }
+  if (studentId) {
+    add(studentId, 'v.student_id');
   }
   if (ownerUserId) {
     add(ownerUserId, 'sp.user_id');

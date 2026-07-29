@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, test, vi } from 'vitest';
 import { Route, Routes } from 'react-router-dom';
 
+import { NAVIGATION_BY_ROLE } from '../config/navigation';
 import { AppLayout } from '../layouts/AppLayout';
 import { createAuthValue, renderWithAuth } from './test-utils';
 
@@ -51,6 +52,20 @@ describe('application layout navigation', () => {
   test('Admin navigation shows approved Admin links', () => {
     renderLayout('admin');
 
+    expect(NAVIGATION_BY_ROLE.admin.map((item) => item.label)).toEqual([
+      'Dashboard',
+      'Students',
+      'Rooms',
+      'Allocations',
+      'Maintenance',
+      'Visitors',
+      'Announcements',
+      'Notifications',
+      'Payments',
+      'Reports',
+      'Audit Logs',
+    ]);
+    expect(NAVIGATION_BY_ROLE.admin[0].path).toBe('/admin/dashboard');
     expect(screen.getAllByText('Students').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Rooms').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Reports').length).toBeGreaterThan(0);
@@ -78,9 +93,7 @@ describe('application layout navigation', () => {
     const logout = vi.fn().mockResolvedValue(undefined);
     renderLayout('student', logout);
 
-    await user.click(
-      screen.getAllByRole('button', { name: /sign out/i })[0]
-    );
+    await user.click(screen.getAllByRole('button', { name: /sign out/i })[0]);
 
     expect(logout).toHaveBeenCalled();
     expect(await screen.findByText('Login destination')).toBeInTheDocument();

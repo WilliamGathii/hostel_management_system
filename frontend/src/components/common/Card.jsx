@@ -3,10 +3,16 @@ const variants = {
   summary: 'bg-card p-4 shadow-card',
 };
 
-export function Card({ children, className = '', variant = 'panel' }) {
+export function Card({
+  children,
+  className = '',
+  variant = 'panel',
+  ...props
+}) {
   return (
     <section
       className={`rounded-card ${variants[variant] || variants.panel} ${className}`}
+      {...props}
     >
       {children}
     </section>
