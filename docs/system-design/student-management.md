@@ -90,8 +90,23 @@ Previous and Next actions are disabled when the related page is unavailable.
 
 The Admin Student detail page is available at `/admin/students/:studentId`.
 
-It displays only information returned by the API. It does not invent room,
-maintenance, visitor, or payment records.
+It uses URL-based tabs so an Admin can open a section directly and use browser
+history normally:
+
+- `?tab=overview`
+- `?tab=room`
+- `?tab=payments`
+- `?tab=maintenance`
+- `?tab=visitors`
+
+Overview is the default tab. It contains personal information, account
+information, status controls, and small summaries based only on real API data.
+The other tabs show records filtered by the selected `student_profiles.id`.
+No records or totals are invented.
+
+The Room tab shows the current allocation and allocation history. The
+Maintenance and Visitors tabs link to the existing detail workflows. The
+Payments tab shows the Student's simulated payment history and summary.
 
 Admins can edit approved identity, contact, and profile fields. Role, account
 status, password information, IDs, and timestamps remain protected.
@@ -155,68 +170,35 @@ The Admin list uses a table on desktop and stacked cards on smaller screens.
 Important Student information and the View details action remain available in
 both layouts.
 
-The Student Profile and Admin detail forms stack on smaller screens.
+The Student Profile and Admin detail forms stack on smaller screens. Student
+Detail tabs scroll within their own tab bar. Allocation, payment, maintenance,
+and visitor tables change to stacked cards on smaller screens.
 
-## 16. Backend Tests
+## 16. Student and Payment Navigation
 
-Backend unit and integration tests cover:
+The Student Payments tab includes an Add Payment Record action. It reuses the
+shared payment form and locks the selected Student. The form confirms the
+Student name and number and uses the Student's active allocation.
 
-- Student service permissions
-- Safe response fields
-- Profile updates
-- Search and pagination
-- Status filtering
-- Status updates
-- Validation
-- Missing records
-- Wrong-role access
+The global Admin Payments page includes a View Student action. It opens:
 
-The complete backend suite contains 100 passing tests across 9 test suites.
+`/admin/students/:studentId?tab=payments`
 
-## 17. Frontend Tests
+## 17. Testing
 
-Frontend tests cover:
+Backend and frontend tests cover:
 
-- Student service requests
-- Profile loading and editing
-- Protected fields
-- Save and cancel behaviour
-- Safe validation errors
-- Admin list search, filtering, and pagination
-- Desktop and mobile Student records
-- Admin Student detail and status confirmation
-- Role-protected routes
-- Future module placeholders
+- Default and URL-selected tabs
+- Student-scoped module filters
+- Empty and populated payment history
+- Locked contextual payment creation
+- Desktop tables and mobile record cards
+- Student and payment cross-navigation
+- Protected fields and role-protected routes
 
-The complete frontend suite contains 65 passing tests across 13 test files.
-
-## 18. Live Testing Status
-
-Live local database testing was completed with temporary test data.
-
-The checks confirmed:
-
-- Public Student registration returns `404`.
-- Unauthenticated Student creation returns `401`.
-- Admin login succeeds.
-- Admin Student creation returns `201`.
-- New accounts use the Student role and active status.
-- Password fields are not returned.
-- The created Student can log in.
-- Admin Student editing succeeds.
-- Temporary test data is removed after the check.
-
-## 19. Current Limitations
+## 18. Current Limitations
 
 - Student full name and email are read-only.
 - Student records cannot be permanently deleted.
 - Profile-image upload is not included.
 - Password reset is not included.
-
-## 20. Features Planned for Later
-
-Room allocation is not included in Step 8.
-
-Maintenance, visitor, announcement, notification, simulated payment, report,
-and audit-log records are also not included. Their existing frontend routes
-remain placeholders until their approved development steps.
